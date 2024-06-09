@@ -427,6 +427,13 @@ function addHistoricalData(chart, localTimestamp, consumptionIncrementalWatts, g
 
 function addHistoricalData2(chart) {
 
+    (async() => {
+        console.log("waiting for variable");
+        while(!window.hasOwnProperty("chart.data.labels")) // define the condition as you like
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log("variable is defined");
+    })();
+
 
     chart.data.labels = ['aaa','bbb'];
     chart.data.datasets[0].data = [100,200];            // the solar web yellow area (consumed directly)
@@ -568,6 +575,12 @@ timer.schedule(async () => {
 
     scriptConfigCopy = JSON.parse(JSON.stringify(scriptConfig));
 });
+
+
+
+
+
+
 
 var request2 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_2024-06-09.json');
 var jsonObj = await request2.loadJSON();
