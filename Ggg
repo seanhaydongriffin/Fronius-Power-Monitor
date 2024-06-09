@@ -491,8 +491,8 @@ await wv.evaluateJavaScript(gaugesScript, false);
 await wv.evaluateJavaScript(historicalScript, false);
 wv.present();
 
-var pastPowerDate = null;
-var pastPowerDatePrevious = null;
+var pastPowerDate = "";
+var pastPowerDatePrevious = "";
 
 var scriptConfigCopy = scriptConfig;
 const timer = new Timer();
@@ -500,10 +500,11 @@ timer.repeats = true;
 timer.timeInterval = 1000;
 timer.schedule(async () => {
 
-    var pastPowerDate = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);
-
     console.log('a=' + pastPowerDate);
     console.log('b=' + pastPowerDatePrevious);
+
+    pastPowerDate = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);
+
 
     if (pastPowerDate != pastPowerDatePrevious)
         alert("ppp");
