@@ -505,6 +505,8 @@ timer.schedule(async () => {
     if (pastPowerDate != pastPowerDatePrevious)
         alert("ppp");
 
+    pastPowerDatePrevious = pastPowerDate;
+
     var inverterAddress = await wv.evaluateJavaScript(`document.getElementById('inverterAddress').value;`, false);
     var request = new Request('http://' + inverterAddress + '/solar_api/v1/GetPowerFlowRealtimeData.fcgi');
     var result;
@@ -547,8 +549,6 @@ timer.schedule(async () => {
         fm.writeString(scriptConfigFilename, JSON.stringify(scriptConfig));
 
     scriptConfigCopy = JSON.parse(JSON.stringify(scriptConfig));
-
-    pastPowerDatePrevious = pastPowerDate;
 });
 
 const now = new Date()
