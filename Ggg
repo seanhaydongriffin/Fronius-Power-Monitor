@@ -439,7 +439,8 @@ function addHistoricalData2(chart, jsonObj) {
 
 
 
-    chart.data.labels = ['aaa','bbb'];
+    chart.data.labels = localTimestamp;
+    //chart.data.labels = ['aaa','bbb'];
     chart.data.datasets[0].data = [100,200];            // the solar web yellow area (consumed directly)
     chart.data.datasets[1].data = [100,200];         // the solar web gray area (Power to grid)
     chart.data.datasets[2].data = [100,200];    // the solar web blue line (consumption)
