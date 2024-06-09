@@ -541,16 +541,31 @@ timer.schedule(async () => {
     scriptConfigCopy = JSON.parse(JSON.stringify(scriptConfig));
 });
 
+const now = new Date()
+const todayShort = (new Date(now.getTime() - (now.getTimezoneOffset()*60*1000))).toISOString().split('T')[0]
 
-var request2 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_2024-06-09.json');
-var jsonObj2 = await request2.loadJSON();
-await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj2) + ');', false);
+let getPastPower = async () => {
+
+    const today = document.getElementById('historicalChartDate').value;
+    var request4 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_' + today + '.json');
+    var jsonObj4 = await request4.loadJSON();
+    await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj4) + ');', false);
+}
+
+document.getElementById('historicalChartDate').value = todayShort;
+document.getElementById('historicalChartDate').addEventListener('change', getPastPower);
+
+getPastPower();
+//var request2 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_' + todayShort + '.json');
+//var jsonObj2 = await request2.loadJSON();
+//await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj2) + ');', false);
 
 const historicalTimer = new Timer();
 historicalTimer.repeats = true;
 historicalTimer.timeInterval = 15 * 60 * 1000;
 historicalTimer.schedule(async () => {
-    var request3 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_2024-06-09.json');
-    var jsonObj3 = await request3.loadJSON();
-    await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj3) + ');', false);
+    getPastPower();
+    //var request3 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_' + todayShort + '.json');
+    //var jsonObj3 = await request3.loadJSON();
+    //await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj3) + ');', false);
 });
