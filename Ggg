@@ -466,7 +466,7 @@ const historicalData = {
 
 const historicalConfig = {
     type: 'line',
-    data: data,
+    data: historicalData,
     options: {
         responsive: true,
         maintainAspectRatio: false,
