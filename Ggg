@@ -528,8 +528,8 @@ await wv.evaluateJavaScript(gaugesScript, false);
 await wv.evaluateJavaScript(historicalScript, false);
 wv.present();
 
-var pastPowerDate = "";
-var pastPowerDatePrevious = "";
+var pastPowerDate = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);;
+var pastPowerDatePrevious = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);;
 
 var scriptConfigCopy = scriptConfig;
 const timer = new Timer();
@@ -537,16 +537,17 @@ timer.repeats = true;
 timer.timeInterval = 1000;
 timer.schedule(async () => {
 
-    console.log('a=' + pastPowerDate);
-    console.log('b=' + pastPowerDatePrevious);
 
     pastPowerDate = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);
 
 
     if (pastPowerDate != pastPowerDatePrevious)
-        alert("ppp");
+        console.log("ppp");
 
-    pastPowerDatePrevious = clone(pastPowerDate);
+    console.log('a=' + pastPowerDate);
+    console.log('b=' + pastPowerDatePrevious);
+
+    pastPowerDatePrevious = pastPowerDate;
 
     var inverterAddress = await wv.evaluateJavaScript(`document.getElementById('inverterAddress').value;`, false);
     var request = new Request('http://' + inverterAddress + '/solar_api/v1/GetPowerFlowRealtimeData.fcgi');
