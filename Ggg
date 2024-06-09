@@ -91,6 +91,7 @@ html, body {
 
 <div class="tab">
   <button class="tablinks" onclick="openTab(event, 'Realtime Charts')" id="defaultOpen">Realtime Charts</button>
+  <button class="tablinks" onclick="openTab(event, 'Historical Charts')">Past Power</button>
   <button class="tablinks" onclick="openTab(event, 'Configuration')">Configuration</button>
   <button class="tablinks" onclick="openTab(event, 'Events')">Events</button>
 </div>
@@ -110,6 +111,10 @@ html, body {
     <div class="alert warning" id="requestFailedAlert" style="display: none;">
         <strong>Warning!</strong> Cannot locate the inverter, check the IP Address in the Configuration tab.
     </div>
+</div>
+
+<div id="Historical Charts" class="tabcontent">
+    <div style="height: 500px; width: 100%;"><canvas id="historicalChart"></canvas></div>
 </div>
 
 <div id="Configuration" class="tabcontent">
@@ -359,10 +364,92 @@ setTimeout(function() {
 `;
 
 
+let historicalScript = `
+// Manage the gauges
+
+var historicalCanvas;
+var historicalChart;
+
+setTimeout(function() {
+
+
+  const historicalConfig = {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'Consumed directly',
+        fill: true,
+        borderColor: '#FAD967',
+		    backgroundColor: '#FAD967',
+        tension: 0.3,
+		    pointRadius: 0,
+        borderWidth: 2,
+        pointStyle: 'rect',
+        order: 1,
+        stack: 'Stack 1'
+      },{
+        label: 'Power to grid',
+        fill: true,
+		    showLine: false,
+        borderColor: '#999999',
+		    backgroundColor: '#999999',
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 2,
+        pointStyle: 'rect',
+        order: 2,
+        stack: 'Stack 1'
+      },{
+        label: 'Consumption',
+        fill: false,
+        borderColor: '#70AFCD',
+		    backgroundColor: '#70AFCD',
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 2,
+        pointStyle: 'line',
+        order: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+        mode: 'index',
+      },	
+      scales: {
+        x: {
+        },
+		    y: {
+		      stacked: true,
+          position: 'right',
+          title: { display: true, text: 'Watts' },
+		    }
+      },
+	    plugins: {
+        legend: {
+          labels: {
+            usePointStyle: true
+          }
+        }
+      }
+    }	
+  };
+
+  historicalChart = new Chart(historicalCanvas, historicalConfig);
+
+
+  
+}, 1000);
+`;
+
+
 let wv = new WebView();
 await wv.loadHTML(html);
 await wv.evaluateJavaScript(overTimeScript, false);
 await wv.evaluateJavaScript(gaugesScript, false);
+await wv.evaluateJavaScript(historicalScript, false);
 wv.present();
 
 var scriptConfigCopy = scriptConfig;
