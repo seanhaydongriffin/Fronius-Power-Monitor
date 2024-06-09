@@ -602,7 +602,7 @@ var jsonObj = await request2.loadJSON();
     localTimestamp = fillTimesArray(localTimestamp);
 
     //await wv.evaluateJavaScript('addHistoricalData(historicalChart, "' + JSON.stringify(localTimestamp) + '", ' + consumptionIncrementalWatts + ', ' + gridProductionIncrementalWatts + ', ' + internalConsumptionIncrementalWatts + ');', false);
-    await wv.evaluateJavaScript('addHistoricalData2(historicalChart, jsonObj);', false);
+    await wv.evaluateJavaScript('addHistoricalData2(historicalChart, ' + JSON.stringify(jsonObj) + ');', false);
 
 
     //const now = new Date(document.getElementById('historicalChartDate').value)
