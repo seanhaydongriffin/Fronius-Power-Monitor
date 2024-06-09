@@ -395,7 +395,7 @@ function fillTimesArray(timesArray) {
     return timesArray;
 }
 
-function addHistoricalData(chart, jsonObj) {
+function addHistoricalData(chart, jsonObj, titleDate) {
 
     var localTimestamp = jsonObj.map(item => item.local_timestamp.substring(11, 11+5));
     const consumptionIncrementalWatts = jsonObj.map(item => item.consumption_incremental_watts == 0 ? null : item.consumption_incremental_watts);
@@ -405,14 +405,12 @@ function addHistoricalData(chart, jsonObj) {
     // add any available timestamps to the end of the day
     localTimestamp = fillTimesArray(localTimestamp);
 
-    const now = new Date(document.getElementById('historicalChartDate').value)
-    const todayLong = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
     chart.data.labels = localTimestamp;
     chart.data.datasets[0].data = consumptionIncrementalWatts;            // the solar web yellow area (consumed directly)
     chart.data.datasets[1].data = gridProductionIncrementalWatts;         // the solar web gray area (Power to grid)
     chart.data.datasets[2].data = internalConsumptionIncrementalWatts;    // the solar web blue line (consumption)
 
-    chart.options.plugins.title = { display: true, text: 'Power in 5 minute intervals as at ' + todayLong };
+    chart.options.plugins.title = { display: true, text: 'Power in 5 minute intervals as at ' + titleDate };
     chart.update('none');
 }
 
@@ -495,14 +493,14 @@ var pastPowerDate = "";
 var pastPowerDatePrevious = "";
 const now = new Date();
 const todayShort = (new Date(now.getTime() - (now.getTimezoneOffset()*60*1000))).toISOString().split('T')[0];
-await wv.evaluateJavaScript("document.getElementById('historicalChartDate').value = " + todayShort + ";", false);
+//await wv.evaluateJavaScript("document.getElementById('historicalChartDate').value = " + todayShort + ";", false);
 
 let getPastPower = async () => {
 
     //const today = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);
     var request4 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_' + pastPowerDate + '.json');
     var jsonObj4 = await request4.loadJSON();
-    await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj4) + ');', false);
+    await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj4) + ', ' + pastPowerDate + ');', false);
 }
 
 var scriptConfigCopy = scriptConfig;
@@ -512,6 +510,9 @@ timer.timeInterval = 1000;
 timer.schedule(async () => {
 
     pastPowerDate = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);
+
+    if (pastPowerDate == "")
+        pastPowerDate = todayShort;
 
     if (pastPowerDate != pastPowerDatePrevious)
         getPastPower();
