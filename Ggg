@@ -495,7 +495,7 @@ var pastPowerDate = "";
 var pastPowerDatePrevious = "";
 const now = new Date();
 const todayShort = (new Date(now.getTime() - (now.getTimezoneOffset()*60*1000))).toISOString().split('T')[0];
-await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value = ${todayShort};`, false);
+await wv.evaluateJavaScript("document.getElementById('historicalChartDate').value = " + todayShort + ";", false);
 
 let getPastPower = async () => {
 
