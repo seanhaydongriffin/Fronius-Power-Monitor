@@ -414,6 +414,13 @@ function addHistoricalData(chart, jsonObj, titleDate) {
     chart.update('none');
 }
 
+Chart.Tooltip.positioners.custom = function(elements, eventPosition) {
+  return {
+      x: 5,
+      y: 5
+  };
+}
+
 const historicalConfig = {
     type: 'line',
     data: {
@@ -473,6 +480,10 @@ const historicalConfig = {
                 labels: {
                     usePointStyle: true
                 }
+            },
+	    tooltip: { 
+                caretSize: 0,
+                position: 'custom'
             }
         }
     }	
