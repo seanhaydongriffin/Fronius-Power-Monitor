@@ -235,14 +235,6 @@ const canvas = document.getElementById('overTimeChart');
 const labels = [];
 Chart.defaults.font.size = 20;
 
-Chart.Tooltip.positioners.custom = function(elements, eventPosition) {
-    return {
-        x: 5,
-        y: 5
-    };
-  }
-
-
 const data = {
     labels: labels,
     datasets: [{
@@ -483,8 +475,7 @@ const historicalConfig = {
                 }
             },
 	    tooltip: { 
-                caretSize: 0,
-                position: 'custom'
+                enabled: false
             }
         }
     }	
