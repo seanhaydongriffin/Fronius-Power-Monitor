@@ -21,22 +21,6 @@ else
 
 fm.writeString(scriptConfigFilename, JSON.stringify(scriptConfig));
 
-
-
-
-
-
-
-function updateHistoricalChart(jsonObj, wv)
-{
-
-    
-}
-
-
-
-
-
 let html = `
 <!DOCTYPE html>
 <html>
@@ -130,6 +114,7 @@ html, body {
 </div>
 
 <div id="Historical Charts" class="tabcontent">
+    <div><input type="date" id="historicalChartDate"/></div>
     <div style="height: 500px; width: 100%;"><canvas id="historicalChart"></canvas></div>
 </div>
 
@@ -385,22 +370,6 @@ let historicalScript = `
 
 var historicalCanvas = document.getElementById('historicalChart');
 
-
-
-
-
-function addHistoricalData(chart, localTimestamp, consumptionIncrementalWatts, gridProductionIncrementalWatts, internalConsumptionIncrementalWatts) {
-
-
-    chart.data.labels = JSON.parse(localTimestamp);
-    chart.data.datasets[0].data = consumptionIncrementalWatts;            // the solar web yellow area (consumed directly)
-    chart.data.datasets[1].data = gridProductionIncrementalWatts;         // the solar web gray area (Power to grid)
-    chart.data.datasets[2].data = internalConsumptionIncrementalWatts;    // the solar web blue line (consumption)
-    chart.options.plugins.title = { display: true, text: 'Power in 5 minute intervals as at' };
-    chart.update('none');
-}
-
-
 function fillTimesArray(timesArray) {
     // Function to add minutes to a time string
     function addMinutes(time, minsToAdd) {
@@ -426,11 +395,7 @@ function fillTimesArray(timesArray) {
     return timesArray;
 }
 
-
-
-
-function addHistoricalData2(chart, jsonObj) {
-
+function addHistoricalData(chart, jsonObj) {
 
     var localTimestamp = jsonObj.map(item => item.local_timestamp.substring(11, 11+5));
     const consumptionIncrementalWatts = jsonObj.map(item => item.consumption_incremental_watts == 0 ? null : item.consumption_incremental_watts);
@@ -440,99 +405,82 @@ function addHistoricalData2(chart, jsonObj) {
     // add any available timestamps to the end of the day
     localTimestamp = fillTimesArray(localTimestamp);
 
-
-
-
+    const now = new Date(document.getElementById('historicalChartDate').value)
+    const todayLong = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
     chart.data.labels = localTimestamp;
     chart.data.datasets[0].data = consumptionIncrementalWatts;            // the solar web yellow area (consumed directly)
     chart.data.datasets[1].data = gridProductionIncrementalWatts;         // the solar web gray area (Power to grid)
     chart.data.datasets[2].data = internalConsumptionIncrementalWatts;    // the solar web blue line (consumption)
 
-    //chart.data.labels = ['aaa','bbb'];
-    //chart.data.datasets[0].data = [100,200];            // the solar web yellow area (consumed directly)
-    //chart.data.datasets[1].data = [100,200];         // the solar web gray area (Power to grid)
-    //chart.data.datasets[2].data = [100,200];    // the solar web blue line (consumption)
-    chart.options.plugins.title = { display: true, text: 'Power in 5 minute intervals as at' };
+    chart.options.plugins.title = { display: true, text: 'Power in 5 minute intervals as at ' + todayLong };
     chart.update('none');
 }
 
-
-
-
-  const historicalConfig = {
+const historicalConfig = {
     type: 'line',
     data: {
-      datasets: [{
-        label: 'Consumed directly',
-        fill: true,
-        borderColor: '#FAD967',
-		    backgroundColor: '#FAD967',
-        tension: 0.3,
-		    pointRadius: 0,
-        borderWidth: 2,
-        pointStyle: 'rect',
-        order: 1,
-        stack: 'Stack 1'
-      },{
-        label: 'Power to grid',
-        fill: true,
-		    showLine: false,
-        borderColor: '#999999',
-		    backgroundColor: '#999999',
-        tension: 0.3,
-        pointRadius: 0,
-        borderWidth: 2,
-        pointStyle: 'rect',
-        order: 2,
-        stack: 'Stack 1'
-      },{
-        label: 'Consumption',
-        fill: false,
-        borderColor: '#70AFCD',
-		    backgroundColor: '#70AFCD',
-        tension: 0.3,
-        pointRadius: 0,
-        borderWidth: 2,
-        pointStyle: 'line',
-        order: 0
-      }]
+        datasets: [{
+            label: 'Consumed directly',
+            fill: true,
+            borderColor: '#FAD967',
+	    backgroundColor: '#FAD967',
+            tension: 0.3,
+	    pointRadius: 0,
+            borderWidth: 2,
+            pointStyle: 'rect',
+            order: 1,
+            stack: 'Stack 1'
+        },{
+            label: 'Power to grid',
+            fill: true,
+	    showLine: false,
+            borderColor: '#999999',
+	    backgroundColor: '#999999',
+            tension: 0.3,
+            pointRadius: 0,
+            borderWidth: 2,
+            pointStyle: 'rect',
+            order: 2,
+            stack: 'Stack 1'
+        },{
+            label: 'Consumption',
+            fill: false,
+            borderColor: '#70AFCD',
+	    backgroundColor: '#70AFCD',
+            tension: 0.3,
+            pointRadius: 0,
+            borderWidth: 2,
+            pointStyle: 'line',
+            order: 0
+        }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: {
-        intersect: false,
-        mode: 'index',
-      },	
-      scales: {
-        x: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            intersect: false,
+            mode: 'index',
+        },	
+        scales: {
+            x: {
+            },
+	    y: {
+	        stacked: true,
+                position: 'right',
+                title: { display: true, text: 'Watts' },
+	    }
         },
-		    y: {
-		      stacked: true,
-          position: 'right',
-          title: { display: true, text: 'Watts' },
-		    }
-      },
-	    plugins: {
-        legend: {
-          labels: {
-            usePointStyle: true
-          }
+	plugins: {
+            legend: {
+                labels: {
+                    usePointStyle: true
+                }
+            }
         }
-      }
     }	
-  };
+};
 
-
-
-
-
-
-  const historicalChart = new Chart(historicalCanvas, historicalConfig);
-
-
-  
-
+const historicalChart = new Chart(historicalCanvas, historicalConfig);
 `;
 
 
@@ -594,30 +542,15 @@ timer.schedule(async () => {
 });
 
 
-
-
-
-
-
 var request2 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_2024-06-09.json');
-var jsonObj = await request2.loadJSON();
+var jsonObj2 = await request2.loadJSON();
+await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj2) + ');', false);
 
-    //var localTimestamp = jsonObj.map(item => item.local_timestamp.substring(11, 11+5));
-    //const consumptionIncrementalWatts = jsonObj.map(item => item.consumption_incremental_watts == 0 ? null : item.consumption_incremental_watts);
-    //const gridProductionIncrementalWatts = jsonObj.map(item => item.grid_production_incremental_watts == 0 ? null : item.grid_production_incremental_watts);
-    //const internalConsumptionIncrementalWatts = jsonObj.map(item => item.internal_consumption_incremental_watts == 0 ? null : item.internal_consumption_incremental_watts);
-
-    // add any available timestamps to the end of the day
-    //localTimestamp = fillTimesArray(localTimestamp);
-
-    //await wv.evaluateJavaScript('addHistoricalData(historicalChart, "' + JSON.stringify(localTimestamp) + '", ' + consumptionIncrementalWatts + ', ' + gridProductionIncrementalWatts + ', ' + internalConsumptionIncrementalWatts + ');', false);
-    await wv.evaluateJavaScript('addHistoricalData2(historicalChart, ' + JSON.stringify(jsonObj) + ');', false);
-
-
-    //const now = new Date(document.getElementById('historicalChartDate').value)
-    //const todayLong = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-    //console.log(JSON.stringify(localTimestamp));
-
-
-//await updateHistoricalChart(jsonObj, wv);
-
+const historicalTimer = new Timer();
+historicalTimer.repeats = true;
+historicalTimer.timeInterval = 15 * 60 * 1000;
+historicalTimer.schedule(async () => {
+    var request3 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_2024-06-09.json');
+    var jsonObj3 = await request3.loadJSON();
+    await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj3) + ');', false);
+});
