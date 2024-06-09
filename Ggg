@@ -52,10 +52,8 @@ function fillTimesArray(timesArray) {
 
 
 
-function updateHistoricalChart()
+function updateHistoricalChart(jsonObj)
 {
-    var request2 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_2024-06-09.json');
-    var jsonObj = await request2.loadJSON();
 
     var localTimestamp = jsonObj.map(item => item.local_timestamp.substring(11, 11+5));
     const consumptionIncrementalWatts = jsonObj.map(item => item.consumption_incremental_watts == 0 ? null : item.consumption_incremental_watts);
@@ -575,5 +573,8 @@ timer.schedule(async () => {
     scriptConfigCopy = JSON.parse(JSON.stringify(scriptConfig));
 });
 
-await updateHistoricalChart();
+var request2 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_2024-06-09.json');
+var jsonObj = await request2.loadJSON();
+
+await updateHistoricalChart(jsonObj);
 
