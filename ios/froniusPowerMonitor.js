@@ -235,6 +235,14 @@ const canvas = document.getElementById('overTimeChart');
 const labels = [];
 Chart.defaults.font.size = 20;
 
+Chart.Tooltip.positioners.custom = function(elements, eventPosition) {
+    return {
+        x: 5,
+        y: 5
+    };
+  }
+
+
 const data = {
     labels: labels,
     datasets: [{
@@ -412,13 +420,6 @@ function addHistoricalData(chart, jsonObj, titleDate) {
 
     chart.options.plugins.title = { display: true, text: 'Power in 5 minute intervals as at ' + titleDate };
     chart.update('none');
-}
-
-Chart.Tooltip.positioners.custom = function(elements, eventPosition) {
-  return {
-      x: 5,
-      y: 5
-  };
 }
 
 const historicalConfig = {
