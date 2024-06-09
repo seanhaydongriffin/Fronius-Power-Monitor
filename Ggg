@@ -491,11 +491,19 @@ await wv.evaluateJavaScript(gaugesScript, false);
 await wv.evaluateJavaScript(historicalScript, false);
 wv.present();
 
+var pastPowerDate = null;
+var pastPowerDatePrevious = null;
+
 var scriptConfigCopy = scriptConfig;
 const timer = new Timer();
 timer.repeats = true;
 timer.timeInterval = 1000;
 timer.schedule(async () => {
+
+    var pastPowerDate = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);
+
+    if (pastPowerDate != pastPowerDatePrevious)
+        alert("ppp");
 
     var inverterAddress = await wv.evaluateJavaScript(`document.getElementById('inverterAddress').value;`, false);
     var request = new Request('http://' + inverterAddress + '/solar_api/v1/GetPowerFlowRealtimeData.fcgi');
@@ -539,6 +547,8 @@ timer.schedule(async () => {
         fm.writeString(scriptConfigFilename, JSON.stringify(scriptConfig));
 
     scriptConfigCopy = JSON.parse(JSON.stringify(scriptConfig));
+
+    pastPowerDatePrevious = pastPowerDate;
 });
 
 const now = new Date()
@@ -552,8 +562,8 @@ let getPastPower = async () => {
     await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj4) + ');', false);
 }
 
-await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value = ${todayShort};`, false);
-await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').addEventListener('change', getPastPower);`, false);
+//await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value = ${todayShort};`, false);
+//await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').addEventListener('change', getPastPower);`, false);
 
 
 //document.getElementById('historicalChartDate').value = todayShort;
