@@ -21,43 +21,6 @@ else
 
 fm.writeString(scriptConfigFilename, JSON.stringify(scriptConfig));
 
-
-
-function clone(obj) {
-    // Handle the 3 simple types, and null or undefined
-    if (null == obj || "object" != typeof obj) return obj;
-
-    // Handle Date
-    if (obj instanceof Date) {
-        var copy = new Date();
-        copy.setTime(obj.getTime());
-        return copy;
-    }
-
-    // Handle Array
-    if (obj instanceof Array) {
-        var copy = [];
-        for (var i = 0, len = obj.length; i < len; i++) {
-            copy[i] = clone(obj[i]);
-        }
-        return copy;
-    }
-
-    // Handle Object
-    if (obj instanceof Object) {
-        var copy = {};
-        for (var attr in obj) {
-            if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
-        }
-        return copy;
-    }
-
-    throw new Error("Unable to copy obj! Its type isn't supported.");
-}
-
-
-
-
 let html = `
 <!DOCTYPE html>
 <html>
@@ -528,8 +491,19 @@ await wv.evaluateJavaScript(gaugesScript, false);
 await wv.evaluateJavaScript(historicalScript, false);
 wv.present();
 
-var pastPowerDate = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);;
-var pastPowerDatePrevious = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);;
+var pastPowerDate = "";
+var pastPowerDatePrevious = "";
+const now = new Date();
+const todayShort = (new Date(now.getTime() - (now.getTimezoneOffset()*60*1000))).toISOString().split('T')[0];
+await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value = ${todayShort};`, false);
+
+let getPastPower = async () => {
+
+    //const today = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);
+    var request4 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_' + pastPowerDate + '.json');
+    var jsonObj4 = await request4.loadJSON();
+    await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj4) + ');', false);
+}
 
 var scriptConfigCopy = scriptConfig;
 const timer = new Timer();
@@ -537,15 +511,10 @@ timer.repeats = true;
 timer.timeInterval = 1000;
 timer.schedule(async () => {
 
-
     pastPowerDate = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);
 
-
     if (pastPowerDate != pastPowerDatePrevious)
-        console.log("ppp");
-
-    console.log('a=' + pastPowerDate);
-    console.log('b=' + pastPowerDatePrevious);
+        getPastPower();
 
     pastPowerDatePrevious = pastPowerDate;
 
@@ -593,16 +562,6 @@ timer.schedule(async () => {
     scriptConfigCopy = JSON.parse(JSON.stringify(scriptConfig));
 });
 
-const now = new Date()
-const todayShort = (new Date(now.getTime() - (now.getTimezoneOffset()*60*1000))).toISOString().split('T')[0]
-
-let getPastPower = async () => {
-
-    const today = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);
-    var request4 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_' + today + '.json');
-    var jsonObj4 = await request4.loadJSON();
-    await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj4) + ');', false);
-}
 
 //await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value = ${todayShort};`, false);
 //await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').addEventListener('change', getPastPower);`, false);
@@ -611,7 +570,7 @@ let getPastPower = async () => {
 //document.getElementById('historicalChartDate').value = todayShort;
 //document.getElementById('historicalChartDate').addEventListener('change', getPastPower);
 
-getPastPower();
+//getPastPower();
 //var request2 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_' + todayShort + '.json');
 //var jsonObj2 = await request2.loadJSON();
 //await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj2) + ');', false);
