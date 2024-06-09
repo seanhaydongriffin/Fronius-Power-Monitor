@@ -417,7 +417,7 @@ var historicalCanvas = document.getElementById('historicalChart');
 function addHistoricalData(chart, localTimestamp, consumptionIncrementalWatts, gridProductionIncrementalWatts, internalConsumptionIncrementalWatts) {
 
 
-    chart.data.labels = localTimestamp;
+    chart.data.labels = JSON.parse(localTimestamp);
     chart.data.datasets[0].data = consumptionIncrementalWatts;            // the solar web yellow area (consumed directly)
     chart.data.datasets[1].data = gridProductionIncrementalWatts;         // the solar web gray area (Power to grid)
     chart.data.datasets[2].data = internalConsumptionIncrementalWatts;    // the solar web blue line (consumption)
@@ -589,7 +589,7 @@ var jsonObj = await request2.loadJSON();
     // add any available timestamps to the end of the day
     localTimestamp = fillTimesArray(localTimestamp);
 
-    await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + localTimestamp + ', ' + consumptionIncrementalWatts + ', ' + gridProductionIncrementalWatts + ', ' + internalConsumptionIncrementalWatts + ');', false);
+    await wv.evaluateJavaScript('addHistoricalData(historicalChart, "' + JSON.stringify(localTimestamp) + '", ' + consumptionIncrementalWatts + ', ' + gridProductionIncrementalWatts + ', ' + internalConsumptionIncrementalWatts + ');', false);
     //await wv.evaluateJavaScript('addHistoricalData2(historicalChart);', false);
 
 
