@@ -411,7 +411,7 @@ function fillTimesArray(timesArray) {
     
     const hh = String(date.getHours()).padStart(2, '0');
     const mm = String(date.getMinutes()).padStart(2, '0');
-    return `${hh}:${mm}`;
+    return hh + ':' + mm;
     }
     
     // Get the last time from the array
