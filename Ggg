@@ -409,7 +409,6 @@ let historicalScript = `
 // Manage the gauges
 
 var historicalCanvas = document.getElementById('historicalChart');
-var historicalChart;
 
 
 
@@ -441,71 +440,71 @@ function addHistoricalData2(chart) {
 setTimeout(function() {
 
 
-  const historicalConfig = {
-    type: 'line',
-    data: {
-      datasets: [{
-        label: 'Consumed directly',
-        fill: true,
-        borderColor: '#FAD967',
-		    backgroundColor: '#FAD967',
-        tension: 0.3,
-		    pointRadius: 0,
-        borderWidth: 2,
-        pointStyle: 'rect',
-        order: 1,
-        stack: 'Stack 1'
-      },{
-        label: 'Power to grid',
-        fill: true,
-		    showLine: false,
-        borderColor: '#999999',
-		    backgroundColor: '#999999',
-        tension: 0.3,
-        pointRadius: 0,
-        borderWidth: 2,
-        pointStyle: 'rect',
-        order: 2,
-        stack: 'Stack 1'
-      },{
-        label: 'Consumption',
-        fill: false,
-        borderColor: '#70AFCD',
-		    backgroundColor: '#70AFCD',
-        tension: 0.3,
-        pointRadius: 0,
-        borderWidth: 2,
-        pointStyle: 'line',
-        order: 0
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: {
-        intersect: false,
-        mode: 'index',
-      },	
-      scales: {
-        x: {
-        },
-		    y: {
-		      stacked: true,
-          position: 'right',
-          title: { display: true, text: 'Watts' },
-		    }
-      },
-	    plugins: {
-        legend: {
-          labels: {
-            usePointStyle: true
-          }
-        }
-      }
-    }	
-  };
 
-  historicalChart = new Chart(historicalCanvas, historicalConfig);
+
+const historicalData = {
+    labels: [],
+    datasets: [{
+        label: 'Consumed in full',
+        fill: false,
+        order: 1,
+        backgroundColor: 'Orange', borderColor: 'Orange', pointRadius: 0, pointHoverRadius: 0
+    },{
+        label: 'Consumed from solar',
+        fill: true,
+        order: 2,
+        backgroundColor: '#66cc00', borderColor: '#66cc00', pointRadius: 0, pointHoverRadius: 0,
+        stack: 'Stack 1'
+    },{
+        label: 'Consumed from grid',
+        fill: true,
+        order: 3,
+        backgroundColor: '#ff0000', borderColor: '#ff0000', pointRadius: 0, pointHoverRadius: 0,
+        stack: 'Stack 1'
+    }]
+};
+
+const historicalConfig = {
+    type: 'line',
+    data: data,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 0, easing: 'linear' },
+        scales: {
+            x: {
+                ticks: { autoSkip: false, maxRotation: 15, minRotation: 15 },
+                grid: { drawTicks: true, tickLength: 10, tickWidth: 2, tickColor: 'Black' },
+                afterBuildTicks: function(scale) {
+                    scale.ticks = scale.ticks.filter(function(value, index) {
+                        return (index % 15 === 0);
+                    });
+                }                
+            },
+            y: {
+                beginAtZero: true,
+                position: 'right',
+                title: { display: true, text: 'Watts' },
+                gridLines: { drawOnChartArea: true },
+                grid: { z: 1 },
+                ticks: { stepSize: 100 }
+            }
+        },
+        plugins: {
+            title: { display: true, text: 'Power Over Time' }
+        }
+    }
+};
+
+
+
+
+
+
+
+
+
+  const historicalChart = new Chart(historicalCanvas, historicalConfig);
 
 
   
