@@ -91,6 +91,7 @@ html, body {
 
 <div class="tab">
   <button class="tablinks" onclick="openTab(event, 'Realtime Charts')" id="defaultOpen">Realtime Charts</button>
+  <button class="tablinks" onclick="openTab(event, 'Historical Charts')">Past Power</button>
   <button class="tablinks" onclick="openTab(event, 'Configuration')">Configuration</button>
   <button class="tablinks" onclick="openTab(event, 'Events')">Events</button>
 </div>
@@ -110,6 +111,11 @@ html, body {
     <div class="alert warning" id="requestFailedAlert" style="display: none;">
         <strong>Warning!</strong> Cannot locate the inverter, check the IP Address in the Configuration tab.
     </div>
+</div>
+
+<div id="Historical Charts" class="tabcontent">
+    <div><input type="date" id="historicalChartDate"/></div>
+    <div style="height: 500px; width: 100%;"><canvas id="historicalChart"></canvas></div>
 </div>
 
 <div id="Configuration" class="tabcontent">
@@ -359,17 +365,157 @@ setTimeout(function() {
 `;
 
 
+let historicalScript = `
+// Manage the gauges
+
+var historicalCanvas = document.getElementById('historicalChart');
+
+function fillTimesArray(timesArray) {
+    // Function to add minutes to a time string
+    function addMinutes(time, minsToAdd) {
+    const timeParts = time.split(':');
+    const date = new Date();
+    date.setHours(parseInt(timeParts[0], 10), parseInt(timeParts[1], 10), 0, 0);
+    date.setMinutes(date.getMinutes() + minsToAdd);
+    
+    const hh = String(date.getHours()).padStart(2, '0');
+    const mm = String(date.getMinutes()).padStart(2, '0');
+    return hh + ':' + mm;
+    }
+    
+    // Get the last time from the array
+    let lastTime = timesArray[timesArray.length - 1];
+    
+    // Continue adding times in 5-minute increments until 23:55
+    while (lastTime !== '23:55') {
+    lastTime = addMinutes(lastTime, 5);
+    timesArray.push(lastTime);
+    }
+
+    return timesArray;
+}
+
+function addHistoricalData(chart, jsonObj, titleDate) {
+
+    var localTimestamp = jsonObj.map(item => item.local_timestamp.substring(11, 11+5));
+    const consumptionIncrementalWatts = jsonObj.map(item => item.consumption_incremental_watts == 0 ? null : item.consumption_incremental_watts);
+    const gridProductionIncrementalWatts = jsonObj.map(item => item.grid_production_incremental_watts == 0 ? null : item.grid_production_incremental_watts);
+    const internalConsumptionIncrementalWatts = jsonObj.map(item => item.internal_consumption_incremental_watts == 0 ? null : item.internal_consumption_incremental_watts);
+
+    // add any available timestamps to the end of the day
+    localTimestamp = fillTimesArray(localTimestamp);
+
+    chart.data.labels = localTimestamp;
+    chart.data.datasets[0].data = consumptionIncrementalWatts;            // the solar web yellow area (consumed directly)
+    chart.data.datasets[1].data = gridProductionIncrementalWatts;         // the solar web gray area (Power to grid)
+    chart.data.datasets[2].data = internalConsumptionIncrementalWatts;    // the solar web blue line (consumption)
+
+    chart.options.plugins.title = { display: true, text: 'Power in 5 minute intervals as at ' + titleDate };
+    chart.update('none');
+}
+
+const historicalConfig = {
+    type: 'line',
+    data: {
+        datasets: [{
+            label: 'Consumed directly',
+            fill: true,
+            borderColor: '#FAD967',
+	    backgroundColor: '#FAD967',
+            tension: 0.3,
+	    pointRadius: 0,
+            borderWidth: 2,
+            pointStyle: 'rect',
+            order: 1,
+            stack: 'Stack 1'
+        },{
+            label: 'Power to grid',
+            fill: true,
+	    showLine: false,
+            borderColor: '#999999',
+	    backgroundColor: '#999999',
+            tension: 0.3,
+            pointRadius: 0,
+            borderWidth: 2,
+            pointStyle: 'rect',
+            order: 2,
+            stack: 'Stack 1'
+        },{
+            label: 'Consumption',
+            fill: false,
+            borderColor: '#70AFCD',
+	    backgroundColor: '#70AFCD',
+            tension: 0.3,
+            pointRadius: 0,
+            borderWidth: 2,
+            pointStyle: 'line',
+            order: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            intersect: false,
+            mode: 'index',
+        },	
+        scales: {
+            x: {
+            },
+	    y: {
+	        stacked: true,
+                position: 'right',
+                title: { display: true, text: 'Watts' },
+	    }
+        },
+	plugins: {
+            legend: {
+                labels: {
+                    usePointStyle: true
+                }
+            }
+        }
+    }	
+};
+
+const historicalChart = new Chart(historicalCanvas, historicalConfig);
+`;
+
+
 let wv = new WebView();
 await wv.loadHTML(html);
 await wv.evaluateJavaScript(overTimeScript, false);
 await wv.evaluateJavaScript(gaugesScript, false);
+await wv.evaluateJavaScript(historicalScript, false);
 wv.present();
+
+var pastPowerDate = "";
+var pastPowerDatePrevious = "";
+const now = new Date();
+const todayShort = (new Date(now.getTime() - (now.getTimezoneOffset()*60*1000))).toISOString().split('T')[0];
+
+let getPastPower = async () => {
+
+    var request4 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_' + pastPowerDate + '.json');
+    var jsonObj4 = await request4.loadJSON();
+    await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj4) + ', "' + pastPowerDate + '");', false);
+}
 
 var scriptConfigCopy = scriptConfig;
 const timer = new Timer();
 timer.repeats = true;
 timer.timeInterval = 1000;
 timer.schedule(async () => {
+
+    pastPowerDate = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);
+
+    if (pastPowerDate == "")
+        pastPowerDate = todayShort;
+
+    if (pastPowerDate != pastPowerDatePrevious)
+        getPastPower();
+
+    pastPowerDatePrevious = pastPowerDate;
 
     var inverterAddress = await wv.evaluateJavaScript(`document.getElementById('inverterAddress').value;`, false);
     var request = new Request('http://' + inverterAddress + '/solar_api/v1/GetPowerFlowRealtimeData.fcgi');
@@ -413,4 +559,11 @@ timer.schedule(async () => {
         fm.writeString(scriptConfigFilename, JSON.stringify(scriptConfig));
 
     scriptConfigCopy = JSON.parse(JSON.stringify(scriptConfig));
+});
+
+const historicalTimer = new Timer();
+historicalTimer.repeats = true;
+historicalTimer.timeInterval = 15 * 60 * 1000;
+historicalTimer.schedule(async () => {
+    getPastPower();
 });
