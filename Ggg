@@ -426,6 +426,17 @@ function addHistoricalData(chart, localTimestamp, consumptionIncrementalWatts, g
     chart.update('none');
 }
 
+function addHistoricalData2(chart) {
+
+
+    chart.data.labels = ['aaa','bbb'];
+    chart.data.datasets[0].data = [100,200];            // the solar web yellow area (consumed directly)
+    chart.data.datasets[1].data = [100,200];         // the solar web gray area (Power to grid)
+    chart.data.datasets[2].data = [100,200];    // the solar web blue line (consumption)
+    chart.options.plugins.title = { display: true, text: 'Power in 5 minute intervals as at' };
+    chart.update('none');
+}
+
 
 setTimeout(function() {
 
@@ -570,7 +581,8 @@ var jsonObj = await request2.loadJSON();
     // add any available timestamps to the end of the day
     localTimestamp = fillTimesArray(localTimestamp);
 
-    await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + localTimestamp + ', ' + consumptionIncrementalWatts + ', ' + gridProductionIncrementalWatts + ', ' + internalConsumptionIncrementalWatts + ');', false);
+    //await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + localTimestamp + ', ' + consumptionIncrementalWatts + ', ' + gridProductionIncrementalWatts + ', ' + internalConsumptionIncrementalWatts + ');', false);
+    await wv.evaluateJavaScript('addHistoricalData2(historicalChart, ' + localTimestamp + ', ' + consumptionIncrementalWatts + ', ' + gridProductionIncrementalWatts + ', ' + internalConsumptionIncrementalWatts + ');', false);
 
 
     //const now = new Date(document.getElementById('historicalChartDate').value)
