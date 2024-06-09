@@ -502,6 +502,9 @@ timer.schedule(async () => {
 
     var pastPowerDate = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);
 
+    console.log('a=' + pastPowerDate);
+    console.log('b=' + pastPowerDatePrevious);
+
     if (pastPowerDate != pastPowerDatePrevious)
         alert("ppp");
 
