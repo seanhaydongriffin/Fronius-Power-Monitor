@@ -367,7 +367,7 @@ setTimeout(function() {
 let historicalScript = `
 // Manage the gauges
 
-var historicalCanvas;
+var historicalCanvas = document.getElementById('historicalChart');
 var historicalChart;
 
 setTimeout(function() {
