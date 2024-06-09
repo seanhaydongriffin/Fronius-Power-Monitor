@@ -500,7 +500,7 @@ let getPastPower = async () => {
     //const today = await wv.evaluateJavaScript(`document.getElementById('historicalChartDate').value;`, false);
     var request4 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_' + pastPowerDate + '.json');
     var jsonObj4 = await request4.loadJSON();
-    await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj4) + ', ' + pastPowerDate + ');', false);
+    await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + JSON.stringify(jsonObj4) + ', "' + pastPowerDate + '");', false);
 }
 
 var scriptConfigCopy = scriptConfig;
