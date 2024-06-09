@@ -581,7 +581,7 @@ var jsonObj = await request2.loadJSON();
     localTimestamp = fillTimesArray(localTimestamp);
 
     //await wv.evaluateJavaScript('addHistoricalData(historicalChart, ' + localTimestamp + ', ' + consumptionIncrementalWatts + ', ' + gridProductionIncrementalWatts + ', ' + internalConsumptionIncrementalWatts + ');', false);
-    await wv.evaluateJavaScript('addHistoricalData2(historicalChart, ' + localTimestamp + ', ' + consumptionIncrementalWatts + ', ' + gridProductionIncrementalWatts + ', ' + internalConsumptionIncrementalWatts + ');', false);
+    await wv.evaluateJavaScript('addHistoricalData2(historicalChart);', false);
 
 
     //const now = new Date(document.getElementById('historicalChartDate').value)
