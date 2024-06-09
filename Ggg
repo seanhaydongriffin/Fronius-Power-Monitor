@@ -52,7 +52,7 @@ function fillTimesArray(timesArray) {
 
 
 
-function updateHistoricalChart(jsonObj)
+function updateHistoricalChart(jsonObj, wv)
 {
 
     var localTimestamp = jsonObj.map(item => item.local_timestamp.substring(11, 11+5));
@@ -576,5 +576,5 @@ timer.schedule(async () => {
 var request2 = new Request('https://seanhaydongriffin.github.io/family-tree/fronius_data/fronius_2024-06-09.json');
 var jsonObj = await request2.loadJSON();
 
-await updateHistoricalChart(jsonObj);
+await updateHistoricalChart(jsonObj, wv);
 
