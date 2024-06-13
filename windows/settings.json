@@ -1,0 +1,47 @@
+{
+  "inverterIpAddress": "192.168.0.109",
+  "gauges": {
+    "width": "200",
+    "height": "120",
+    "powerFromSolar": {
+      "band": [
+        {
+          "limit": "300",
+          "colour": "#99ff33"
+        },
+        {
+          "limit": "1000",
+          "colour": "#66cc00"
+        },
+        {
+          "limit": "4000",
+          "colour": "#4d9900"
+        },
+        {
+          "limit": "8000",
+          "colour": "#336600"
+        }
+      ]
+    },
+    "powerFromGrid": {
+      "band": [
+        {
+          "limit": "300",
+          "colour": "#ff9999"
+        },
+        {
+          "limit": "1000",
+          "colour": "#ff0000"
+        },
+        {
+          "limit": "4000",
+          "colour": "#b81414"
+        },
+        {
+          "limit": "8000",
+          "colour": "#660000"
+        }
+      ]
+    }
+  }
+}
