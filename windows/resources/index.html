@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <style>
 html, body {
     font-family: 'Arial', sans-serif;
@@ -98,23 +99,34 @@ html, body {
 <div id="Historical Charts" class="tabcontent">
 
   <div class="config-container">
-    <div class="config-left"><input type="date" id="historicalChartDate"/> <button onclick="getPastPower()">Refresh</button></div>
+    <div class="config-left"><input type="date" id="historicalChartDate"/> <button onclick="getPastPower()">Refresh</button>
+    
+      <label for="charts">Choose a chart:</label>
+      <select name="charts" id="charts" onchange="changeChart()">
+        <option value="solarWebEnhancedChart">Solar Web Enhanced</option>
+        <option value="solarWebOriginalChart">Solar Web Original</option>
+        <option value="inverterChart">Inverter</option>
+      </select>
+
+    </div>
     <div class="config-right">chart auto refreshes every 15 minutes</div>
   </div>
 
-  <div style="height: 300px; width: 100%;"><canvas id="inverterHistoricalChart"></canvas></div>
-  <div style="height: 300px; width: 100%;"><canvas id="solarWebHistoricalChart"></canvas></div>
+<!--  <div style="height: 300px; width: 100%;"><canvas id="inverterHistoricalChart"></canvas></div> -->
+<!--  <div style="height: 300px; width: 100%;"><canvas id="solarWebOriginalHistoricalChart"></canvas></div> -->
   <div style="height: 300px; width: 100%;"><canvas id="solarWebEnhancedHistoricalChart"></canvas></div>
   <div>
     <h3>Bill for period xx to yy</h3>
+    <div><span style="color: red">▼</span> from the grid <span style="color: #999999">▲</span> to the grid</div>
+    <br>
     <table id="meters" style="width: 100%; table-layout: fixed; border: 2px solid red; border-radius: 10px;">
-      <colgroup><col style="width: 70%;"><col style="width: 30%;"></colgroup>
-      <thead><tr><th style="text-align: left; width: 80%;">Meter Number</th><th style="text-align: right;">Usage kWh</th></tr></thead>
+      <colgroup><col style="width: 20px;"><col style="width: 70%;"><col style="width: 30%;"></colgroup>
+      <thead><tr><th></th><th style="text-align: left; width: 80%;">Meter Number</th><th style="text-align: right;">Usage</th></tr></thead>
     </table>
     <br>
     <table id="usage" style="width: 100%; table-layout: fixed; border: 2px solid red; border-radius: 10px;">
-      <colgroup><col style="width: 70%;"><col style="width: 10%;"><col style="width: 10%;"><col style="width: 10%;"></colgroup>
-      <thead><tr><th style="text-align: left; width: 40%;">Charge</th><th style="text-align: right; width: 20%;">Quantity</th><th style="text-align: right; width: 20%;">Rate Incl. GST</th><th style="text-align: right; width: 20%;">Total Incl. GST</th></tr></thead>
+      <colgroup><col style="width: 20px;"><col style="width: 70%;"><col style="width: 10%;"><col style="width: 10%;"><col style="width: 10%;"><col style="width: 25px;"></colgroup>
+      <thead><tr><th></th><th style="text-align: left; width: 40%;">Charge</th><th style="text-align: right; width: 20%;">Quantity</th><th style="text-align: right; width: 20%;">Rate Incl. GST</th><th style="text-align: right; width: 20%;">Total Incl. GST</th><th></th></tr></thead>
     </table>
   </div>
 </div>
@@ -157,11 +169,11 @@ html, body {
       
       <fieldset>
         <legend>Charges:</legend>
-        <input type="text" id="cfgc1name" name="cfgcl1name" value="Controlled Load 1 (est. from the grid 10pm to 7am hot water only)"> <label for="cfgcl1type">Type:</label> <input type="text" id="cfgc1type" name="cfgcl1type" value="per unit within 22:00-07:00"> <label for="cfgcl1rate">Rate ($):</label> <input type="text" id="cfgc1rate" name="cfgcl1rate" class="size-field" value="0.19459"> <label for="cfgcl1meter">Meter (#):</label> <input type="text" id="cfgc1meter" name="cfgcl1meter" class="size-field" value="366423/01"><br><br>
+        <input type="text" id="cfgc1name" name="cfgcl1name" value="Controlled Load 1 (10pm to 7am hot water only est.)"> <label for="cfgcl1type">Type:</label> <input type="text" id="cfgc1type" name="cfgcl1type" value="per unit within 22:00-07:00"> <label for="cfgcl1rate">Rate ($):</label> <input type="text" id="cfgc1rate" name="cfgcl1rate" class="size-field" value="0.19459"> <label for="cfgcl1meter">Meter (#):</label> <input type="text" id="cfgc1meter" name="cfgcl1meter" class="size-field" value="366423/01 (Controlled Load 1)"><br><br>
         <input type="text" id="cfgc2name" name="cfgdcname" value="Daily Charge (daily charge)"> <label for="cfgdctype">Type:</label> <input type="text" id="cfgc2type" name="cfgdctype" value="per day"> <label for="cfgdcrate">Rate ($):</label> <input type="text" id="cfgc2rate" name="cfgdcrate" class="size-field" value="1.14818"> <label for="cfgdcmeter">Meter (#):</label> <input type="text" id="cfgc2meter" name="cfgdcmeter" class="size-field" value="none"><br><br>
         <input type="text" id="cfgc3name" name="cfgdccl1name" value="Daily Charge - Controlled Load 1 (daily charge)"> <label for="cfgdccl1type">Type:</label> <input type="text" id="cfgc3type" name="cfgdccl1type" value="per day"> <label for="cfgdccl1rate">Rate ($):</label> <input type="text" id="cfgc3rate" name="cfgdccl1rate" class="size-field" value="0.02915"> <label for="cfgdccl1meter">Meter (#):</label> <input type="text" id="cfgc3meter" name="cfgdccl1meter" class="size-field" value="none"><br><br>
-        <input type="text" id="cfgc4name" name="cfgssname" value="Standard Solar (to the grid)"> <label for="cfgsstype">Type:</label> <input type="text" id="cfgc4type" name="cfgsstype" value="per unit"> <label for="cfgssrate">Rate ($):</label> <input type="text" id="cfgc4rate" name="cfgssrate" class="size-field" value="-0.08000"> <label for="cfgssmeter">Meter (#):</label> <input type="text" id="cfgc4meter" name="cfgssmeter" class="size-field" value="1615157/02"><br><br>
-        <input type="text" id="cfgc5name" name="cfgpname" value="Peak (from the grid less the controlled load)"> <label for="cfgptype">Type:</label> <input type="text" id="cfgc5type" name="cfgptype" value="per unit"> <label for="cfgprate">Rate ($):</label> <input type="text" id="cfgc5rate" name="cfgprate" class="size-field" value="0.29733"> <label for="cfgpmeter">Meter (#):</label> <input type="text" id="cfgc5meter" name="cfgpmeter" class="size-field" value="1615157/01"><br><br>
+        <input type="text" id="cfgc4name" name="cfgssname" value="Standard Solar"> <label for="cfgsstype">Type:</label> <input type="text" id="cfgc4type" name="cfgsstype" value="per unit"> <label for="cfgssrate">Rate ($):</label> <input type="text" id="cfgc4rate" name="cfgssrate" class="size-field" value="-0.08000"> <label for="cfgssmeter">Meter (#):</label> <input type="text" id="cfgc4meter" name="cfgssmeter" class="size-field" value="1615157/02 (Standard Solar)"><br><br>
+        <input type="text" id="cfgc5name" name="cfgpname" value="Peak (grid power less the controlled load 1)"> <label for="cfgptype">Type:</label> <input type="text" id="cfgc5type" name="cfgptype" value="per unit"> <label for="cfgprate">Rate ($):</label> <input type="text" id="cfgc5rate" name="cfgprate" class="size-field" value="0.29733"> <label for="cfgpmeter">Meter (#):</label> <input type="text" id="cfgc5meter" name="cfgpmeter" class="size-field" value="1615157/01 (Peak)"><br><br>
       </fieldset>        
     </fieldset>        
   </div>
@@ -334,7 +346,7 @@ document.getElementById("defaultOpen").click();
 
   // Manage the historical charts
 
-  const inverterHistoricalCanvas = document.getElementById('inverterHistoricalChart');
+  //const inverterHistoricalCanvas = document.getElementById('inverterHistoricalChart');
 
   Chart.Tooltip.positioners.custom = function(elements, eventPosition) {
     return {
@@ -411,10 +423,10 @@ document.getElementById("defaultOpen").click();
     }	
   };
 
-  var inverterHistoricalChart = new Chart(inverterHistoricalCanvas, inverterHistoricalConfig);
+  //var inverterHistoricalChart = new Chart(inverterHistoricalCanvas, inverterHistoricalConfig);
 
 
-  const solarWebHistoricalCanvas = document.getElementById('solarWebHistoricalChart');
+  //const solarWebHistoricalCanvas = document.getElementById('solarWebOriginalHistoricalChart');
 
   Chart.Tooltip.positioners.custom = function(elements, eventPosition) {
     return {
@@ -423,7 +435,7 @@ document.getElementById("defaultOpen").click();
     };
   }
 
-  const solarWebHistoricalConfig = {
+  const solarWebOriginalHistoricalConfig = {
     type: 'line',
     data: {
       datasets: [{
@@ -491,7 +503,7 @@ document.getElementById("defaultOpen").click();
     }	
   };
 
-  var solarWebHistoricalChart = new Chart(solarWebHistoricalCanvas, solarWebHistoricalConfig);
+  //var solarWebOriginalHistoricalChart = new Chart(solarWebHistoricalCanvas, solarWebOriginalHistoricalConfig);
 
 
 
@@ -504,20 +516,13 @@ document.getElementById("defaultOpen").click();
     };
   }
 
+
+
+  
   const solarWebEnhancedHistoricalConfig = {
     type: 'line',
     data: {
       datasets: [{
-        label: 'Consumption',
-        fill: false,
-        borderColor: '#70AFCD',
-		    backgroundColor: '#70AFCD',
-        tension: 0.3,
-        pointRadius: 0,
-        borderWidth: 2,
-        pointStyle: 'line',
-        order: 0
-      },{
         label: 'Consumed directly',
         fill: true,
         borderColor: '#FAD967',
@@ -525,7 +530,8 @@ document.getElementById("defaultOpen").click();
         tension: 0.3,
 		    pointRadius: 0,
         borderWidth: 2,
-        pointStyle: 'rect',
+        pointStyle: 'triangle',
+        rotation: 60,
         order: 1,
         stack: 'Stack 1'
       },{
@@ -536,7 +542,8 @@ document.getElementById("defaultOpen").click();
         tension: 0.3,
 		    pointRadius: 0,
         borderWidth: 2,
-        pointStyle: 'rect',
+        pointStyle: 'triangle',
+        rotation: 60,
         order: 2,
         stack: 'Stack 1'
       },{
@@ -548,7 +555,7 @@ document.getElementById("defaultOpen").click();
         tension: 0.3,
         pointRadius: 0,
         borderWidth: 2,
-        pointStyle: 'rect',
+        pointStyle: 'triangle',
         order: 3,
         stack: 'Stack 1'
       }]
@@ -572,7 +579,14 @@ document.getElementById("defaultOpen").click();
 	    plugins: {
         legend: {
           labels: {
-            usePointStyle: true
+            usePointStyle: true,
+            
+
+              
+              
+            
+
+
           }
         },
         tooltip: { 
