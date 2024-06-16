@@ -129,6 +129,8 @@ html, body {
       <thead><tr><th></th><th style="text-align: left; width: 40%;">Charge</th><th style="text-align: right; width: 20%;">Quantity</th><th style="text-align: right; width: 20%;">Rate Incl. GST</th><th style="text-align: right; width: 20%;">Total Incl. GST</th><th></th></tr></thead>
     </table>
   </div>
+  <br>
+  <div style="height: 300px; width: 100%;"><canvas id="solarWebYearlyEnhancedHistoricalChart"></canvas></div>
 </div>
 
 <div id="Events" class="tabcontent">
@@ -346,8 +348,6 @@ document.getElementById("defaultOpen").click();
 
   // Manage the historical charts
 
-  //const inverterHistoricalCanvas = document.getElementById('inverterHistoricalChart');
-
   Chart.Tooltip.positioners.custom = function(elements, eventPosition) {
     return {
         x: 5,
@@ -423,18 +423,6 @@ document.getElementById("defaultOpen").click();
     }	
   };
 
-  //var inverterHistoricalChart = new Chart(inverterHistoricalCanvas, inverterHistoricalConfig);
-
-
-  //const solarWebHistoricalCanvas = document.getElementById('solarWebOriginalHistoricalChart');
-
-  Chart.Tooltip.positioners.custom = function(elements, eventPosition) {
-    return {
-        x: 5,
-        y: 5
-    };
-  }
-
   const solarWebOriginalHistoricalConfig = {
     type: 'line',
     data: {
@@ -503,22 +491,6 @@ document.getElementById("defaultOpen").click();
     }	
   };
 
-  //var solarWebOriginalHistoricalChart = new Chart(solarWebHistoricalCanvas, solarWebOriginalHistoricalConfig);
-
-
-
-  const solarWebEnhancedHistoricalCanvas = document.getElementById('solarWebEnhancedHistoricalChart');
-
-  Chart.Tooltip.positioners.custom = function(elements, eventPosition) {
-    return {
-        x: 5,
-        y: 5
-    };
-  }
-
-
-
-  
   const solarWebEnhancedHistoricalConfig = {
     type: 'line',
     data: {
@@ -597,8 +569,83 @@ document.getElementById("defaultOpen").click();
     }	
   };
 
+  const solarWebEnhancedHistoricalCanvas = document.getElementById('solarWebEnhancedHistoricalChart');
   var solarWebEnhancedHistoricalChart = new Chart(solarWebEnhancedHistoricalCanvas, solarWebEnhancedHistoricalConfig);
 
+
+  const solarWebYearlyEnhancedHistoricalConfig = {
+    type: 'bar',
+    data: {
+      datasets: [{
+        label: 'Consumed directly',
+        fill: true,
+        borderColor: '#FAD967',
+		    backgroundColor: '#FAD967',
+		    pointRadius: 0,
+        borderWidth: 2,
+        order: 1,
+        stack: 'Stack 1'
+      },{
+        label: 'Consumed from grid - peak',
+        fill: true,
+        borderColor: 'red',
+		    backgroundColor: 'red',
+		    pointRadius: 0,
+        borderWidth: 2,
+        order: 2,
+        stack: 'Stack 1'
+      },{
+        label: 'Consumed from grid - controlled load 1',
+        fill: true,
+        borderColor: 'pink',
+		    backgroundColor: 'pink',
+        pointRadius: 0,
+        borderWidth: 2,
+        order: 3,
+        stack: 'Stack 1'
+      },{
+        label: 'Power to grid',
+        fill: true,
+        borderColor: '#999999',
+		    backgroundColor: '#999999',
+        pointRadius: 0,
+        borderWidth: 2,
+        order: 4,
+        stack: 'Stack 1'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+        mode: 'index',
+      },	
+      scales: {
+        x: {
+        },
+		    y: {
+		      stacked: true,
+          position: 'right',
+          title: { display: true, text: 'Kilowatt Hours' },
+		    }
+      },
+	    plugins: {
+        legend: {
+          labels: {
+            usePointStyle: true
+          }
+        },
+        tooltip: { 
+            caretSize: 0,
+            position: 'custom'
+        }
+      }
+    }	
+  };
+
+  const solarWebYearlyEnhancedHistoricalCanvas = document.getElementById('solarWebYearlyEnhancedHistoricalChart');
+  var solarWebYearlyEnhancedHistoricalChart = new Chart(solarWebYearlyEnhancedHistoricalCanvas, solarWebYearlyEnhancedHistoricalConfig);
 
 
 
