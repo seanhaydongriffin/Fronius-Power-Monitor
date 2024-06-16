@@ -14,20 +14,42 @@ Neutralino.events.on('spawnedProcess', (evt) => {
             //console.log("stdErr=" + evt.detail.data);
             break;
         case 'exit':
+            //console.log("exit evt.detail.id=" + evt.detail.id);
+
             try {
                 var jsonObj = JSON.parse(stdoutMap.get(evt.detail.id));
 
                 if (jsonObj.hasOwnProperty("Body"))
                     handleCurrentPowerReply(jsonObj);
                 else
-                    if (jsonObj.hasOwnProperty("isPremiumFeature"))
-                        handleSolarWebPastPowerReply(jsonObj);
+                {
+
+                    document.querySelectorAll('td[data-name="cl1qty"]')[0].textContent = "0 kWh";
+                    document.querySelectorAll('td[data-name="ssqty"]')[0].textContent = "0 kWh";
+                    document.querySelectorAll('td[data-name="pqty"]')[0].textContent = "0 kWh";
+                    document.querySelectorAll('td[data-name="cl1total"]')[0].textContent = "$0.00";
+                    document.querySelectorAll('td[data-name="sstotal"]')[0].textContent = "$0.00";
+                    document.querySelectorAll('td[data-name="ptotal"]')[0].textContent = "$0.00";
+        
+
+                    if (Array.isArray(jsonObj) && jsonObj[0].hasOwnProperty("con_direct"))
+                        handleSolarWebYearlyPastPowerReply(jsonObj);
                     else
-                        handleInverterPastPowerReply(jsonObj);
+                        if (jsonObj.hasOwnProperty("isPremiumFeature"))
+                            handleSolarWebPastPowerReply(jsonObj);
+                        else
+                            handleInverterPastPowerReply(jsonObj);
+                }
             } catch (error) {
                 jsonObj = null;
                 solarWebEnhancedHistoricalChart.update('none');
-
+                document.querySelectorAll('td[data-name="cl1qty"]')[0].textContent = "0 kWh";
+                document.querySelectorAll('td[data-name="ssqty"]')[0].textContent = "0 kWh";
+                document.querySelectorAll('td[data-name="pqty"]')[0].textContent = "0 kWh";
+                document.querySelectorAll('td[data-name="cl1total"]')[0].textContent = "$0.00";
+                document.querySelectorAll('td[data-name="sstotal"]')[0].textContent = "$0.00";
+                document.querySelectorAll('td[data-name="ptotal"]')[0].textContent = "$0.00";
+        
             }
             stdoutMap.delete(evt.detail.id);
             //alert(JSON.stringify(jsonObj));
@@ -97,16 +119,20 @@ function fillTimesArray(timesArray) {
 
 function sumPowerForPeriod(startHour, endHour, powerJsonObj)
 {
-        
+    const today = document.getElementById('historicalChartDate').value;
+
     // Convert hours to Unix timestamps for the given day
-    const startTime = new Date().setHours(startHour, 0, 0, 0);
-    const endTime = new Date().setHours(endHour, 0, 0, 0);
+    const startTime = new Date(today).setHours(startHour, 0, 0, 0);
+    const endTime = new Date(today).setHours(endHour, 0, 0, 0);
     
+    //console.log("startTime=" + startTime + ", endTime=" + endTime);
+
     // Sum the result values for the given range of hours
     return powerJsonObj.reduce((acc, obj) => {
         const keyTime = parseInt(obj.key);
 
-        if (keyTime >= startTime && keyTime < endTime) {
+        if (keyTime >= startTime && keyTime <= endTime) {
+            //console.log("key=" + obj.key + ", result=" + obj.result);
             return acc + obj.result;
         }
 
@@ -144,16 +170,29 @@ function handleInverterPastPowerReply(jsonObj)
 }
 
 
+function handleSolarWebYearlyPastPowerReply(jsonObj)
+{
+    const dateArray = jsonObj.map(item => item.date);
+    const cl1Array = jsonObj.map(item => item.cl1);
+    const peakArray = jsonObj.map(item => item.peak);
+    const solarArray = jsonObj.map(item => item.solar);
+    const consumedDirectlyArray = jsonObj.map(item => item.con_direct);
+
+    solarWebYearlyEnhancedHistoricalChart.data.labels = dateArray;
+    solarWebYearlyEnhancedHistoricalChart.data.datasets[0].data = consumedDirectlyArray;
+    solarWebYearlyEnhancedHistoricalChart.data.datasets[1].data = peakArray;
+    solarWebYearlyEnhancedHistoricalChart.data.datasets[2].data = cl1Array;
+    solarWebYearlyEnhancedHistoricalChart.data.datasets[3].data = solarArray;
+    solarWebYearlyEnhancedHistoricalChart.update();
+
+}
+
+
+
 function handleSolarWebPastPowerReply(jsonObj)
 {
     console.log("handleSolarWebPastPowerReply=" + JSON.stringify(jsonObj));
 
-    document.querySelectorAll('td[data-name="cl1qty"]')[0].textContent = "0 kWh";
-    document.querySelectorAll('td[data-name="ssqty"]')[0].textContent = "0 kWh";
-    document.querySelectorAll('td[data-name="pqty"]')[0].textContent = "0 kWh";
-    document.querySelectorAll('td[data-name="cl1total"]')[0].textContent = "$0.00";
-    document.querySelectorAll('td[data-name="sstotal"]')[0].textContent = "$0.00";
-    document.querySelectorAll('td[data-name="ptotal"]')[0].textContent = "$0.00";
 
 
     solarWebEnhancedHistoricalChart.destroy();
@@ -269,11 +308,11 @@ function handleSolarWebPastPowerReply(jsonObj)
         
         // sum all the consumed from the grid power (watts) for the controlled load 1 period
         const morningControlledLoad1TotalWatts = sumPowerForPeriod(0, 7, consumedFromGridSeries);
-        //console.log("morningControlledLoad1TotalWatts=" + morningControlledLoad1TotalWatts);
+        console.log("morningControlledLoad1TotalWatts=" + morningControlledLoad1TotalWatts);
         const eveningControlledLoad1TotalWatts = sumPowerForPeriod(22, 24, consumedFromGridSeries);
-        //console.log("eveningControlledLoad1TotalWatts=" + eveningControlledLoad1TotalWatts);
+        console.log("eveningControlledLoad1TotalWatts=" + eveningControlledLoad1TotalWatts);
         const controlledLoad1TotalWatts = morningControlledLoad1TotalWatts + eveningControlledLoad1TotalWatts;
-        //console.log("controlledLoad1TotalWatts=" + controlledLoad1TotalWatts);
+        console.log("controlledLoad1TotalWatts=" + controlledLoad1TotalWatts);
 
         // estimating 10% of the power during the controlled load 1 period applies to controlled load 1
         const controlledLoad1TotalWattsEstimated = controlledLoad1TotalWatts * 10 / 100;
@@ -298,7 +337,7 @@ function handleSolarWebPastPowerReply(jsonObj)
         const cl1MeterName = document.getElementsByName('cfgcl1meter')[0].value;
         //console.log("cl1MeterName=" + cl1MeterName);
         document.querySelectorAll('td[data-name="' + cl1MeterName + '-direction"]')[0].textContent = "\u25BC";
-        document.querySelectorAll('td[data-name="' + cl1MeterName + '-direction"]')[0].style.color = "red";
+        document.querySelectorAll('td[data-name="' + cl1MeterName + '-direction"]')[0].style.color = "pink";
         document.querySelectorAll('td[data-name="' + cl1MeterName + '-usage"]')[0].textContent = controlledLoad1TotalKilowattHoursEstimated.toFixed(4) + " kWh";
 
 
@@ -369,7 +408,7 @@ function handleSolarWebPastPowerReply(jsonObj)
             document.querySelectorAll('td[data-name="sscr"]')[0].textContent = "";
 
         document.querySelectorAll('td[data-name="cl1direction"]')[0].textContent = "\u25BC";
-        document.querySelectorAll('td[data-name="cl1direction"]')[0].style.color = "red";
+        document.querySelectorAll('td[data-name="cl1direction"]')[0].style.color = "pink";
         document.querySelectorAll('td[data-name="ssdirection"]')[0].textContent = "\u25B2";
         document.querySelectorAll('td[data-name="ssdirection"]')[0].style.color = "#999999";
         document.querySelectorAll('td[data-name="pdirection"]')[0].textContent = "\u25BC";
@@ -438,6 +477,7 @@ let getPastPower = async () => {
         await Neutralino.os.spawnProcess(`C:/dwn/myapp/extensions/curl/bin/curl -k  https://seanhaydongriffin.github.io/family-tree/fronius_data/solar_web_${today}.json`);
         //await Neutralino.os.spawnProcess(`C:/dwn/myapp/extensions/curl/bin/curl -k  https://seanhaydongriffin.github.io/family-tree/fronius_data/solar_web_2024-06-13.json`);
 
+    await Neutralino.os.spawnProcess(`C:/dwn/myapp/extensions/curl/bin/curl -k  https://seanhaydongriffin.github.io/family-tree/fronius_data/solar_web_2024.json`);
 
 }
 
@@ -493,10 +533,19 @@ Neutralino.events.on('ready', async () => {
             fromSolarGauge.data.datasets[0].data[0] = 0;
         } catch (err)
         {
+            console.log("waitForTrue is false");
             return false; // or false based on some logic
         }
+        console.log("waitForTrue is true");
         return true;
     });
+
+    (async() => {
+        console.log("waiting for variable");
+        while(!window.hasOwnProperty("fromSolarGauge.data.datasets[0].data[0]")) // define the condition as you like
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log("variable is defined");
+    })();
 
     // const observer = new MutationObserver((mutations, obs) => {
     //     if (fromSolarGauge.data.datasets) {
