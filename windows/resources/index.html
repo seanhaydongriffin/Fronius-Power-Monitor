@@ -99,17 +99,29 @@ html, body {
 <div id="Historical Charts" class="tabcontent">
 
   <div class="config-container">
-    <div class="config-left"><input type="date" id="historicalChartDate"/> <button onclick="getPastPower()">Refresh</button>
-    
-      <label for="charts">Choose a chart:</label>
-      <select name="charts" id="charts" onchange="changeChart()">
-        <option value="solarWebEnhancedChart">Solar Web Enhanced</option>
-        <option value="solarWebOriginalChart">Solar Web Original</option>
-        <option value="inverterChart">Inverter</option>
-      </select>
+    <div class="config-left">
+      <div>
+        <label for="views">Choose a view: </label>
+        <select name="views" id="views" style="width: 200px;" onchange="changeChart()">
+          <option value="powerIntradayV2View">Power Intraday v2 (Solar Web data)</option>
+          <option value="powerIntradayV1View">Power Intraday v1 (Solar Web data)</option>
+          <option value="powerIntradayView">Power Intraday (Inverter data)</option>
+          <option value="powerDailyView">Power Daily (Solar Web data)</option>
+          <option value="costDailyView">Cost Daily (Solar Web data)</option>
+        </select>
+        <label for="historicalChartDate">Choose a date: </label><input type="date" id="historicalChartDate"/>
+      </div>
+      <div>
+        <label for="chart">Choose a chart: </label>
+        <input type="radio" id="withSolar" name="chart" value="withSolar" onclick="handleSolarWebYearlyPastPowerReply()"><label for="withSolar">With Solar</label>
+        <input type="radio" id="withoutSolar" name="chart" value="withoutSolar" onclick="handleSolarWebYearlyPastPowerReply()"><label for="withoutSolar">Without Solar</label>
+      </div>
 
     </div>
-    <div class="config-right">chart auto refreshes every 15 minutes</div>
+    <div class="config-right">
+      <span id="loading"></span>
+      <button onclick="getPastPower()">Refresh</button>
+    </div>
   </div>
 
 <!--  <div style="height: 300px; width: 100%;"><canvas id="inverterHistoricalChart"></canvas></div> -->
@@ -117,8 +129,6 @@ html, body {
   <div style="height: 300px; width: 100%;"><canvas id="solarWebEnhancedHistoricalChart"></canvas></div>
   <div>
     <h3>Bill for period xx to yy</h3>
-    <div><span style="color: red">▼</span> from the grid <span style="color: #999999">▲</span> to the grid</div>
-    <br>
     <table id="meters" style="width: 100%; table-layout: fixed; border: 2px solid red; border-radius: 10px;">
       <colgroup><col style="width: 20px;"><col style="width: 70%;"><col style="width: 30%;"></colgroup>
       <thead><tr><th></th><th style="text-align: left; width: 80%;">Meter Number</th><th style="text-align: right;">Usage</th></tr></thead>
@@ -202,6 +212,10 @@ function openTab(evt, tabName) {
   }
   document.getElementById(tabName).style.display = "block";
   evt.currentTarget.className += " active";
+
+  if (tabName == 'Historical Charts')
+  
+    document.getElementById('charts').focus();
 }
 
 document.getElementById("defaultOpen").click();
@@ -265,7 +279,7 @@ document.getElementById("defaultOpen").click();
         y: {
           beginAtZero: true,
           position: 'right',
-          title: { display: true, text: 'Watts' },
+          title: { display: true, text: 'Power (W)' },
           gridLines: { drawOnChartArea: true },
           grid: { z: 1 },
           ticks: { stepSize: 100 }
@@ -406,7 +420,7 @@ document.getElementById("defaultOpen").click();
 		    y: {
 		      stacked: true,
           position: 'right',
-          title: { display: true, text: 'Watts' },
+          title: { display: true, text: 'Power (W)' },
 		    }
       },
 	    plugins: {
@@ -474,7 +488,7 @@ document.getElementById("defaultOpen").click();
 		    y: {
 		      stacked: true,
           position: 'right',
-          title: { display: true, text: 'Watts' },
+          title: { display: true, text: 'Power (W)' },
 		    }
       },
 	    plugins: {
@@ -507,7 +521,7 @@ document.getElementById("defaultOpen").click();
         order: 1,
         stack: 'Stack 1'
       },{
-        label: 'Consumed from grid',
+        label: 'Peak consumed from grid',
         fill: true,
         borderColor: 'red',
 		    backgroundColor: 'red',
@@ -519,6 +533,18 @@ document.getElementById("defaultOpen").click();
         order: 2,
         stack: 'Stack 1'
       },{
+        label: 'CL1 consumed from grid',
+        fill: true,
+        borderColor: 'pink',
+		    backgroundColor: 'pink',
+        tension: 0.3,
+		    pointRadius: 0,
+        borderWidth: 2,
+        pointStyle: 'triangle',
+        rotation: 60,
+        order: 3,
+        stack: 'Stack 1'
+      },{
         label: 'Power to grid',
         fill: true,
 		    showLine: false,
@@ -528,7 +554,7 @@ document.getElementById("defaultOpen").click();
         pointRadius: 0,
         borderWidth: 2,
         pointStyle: 'triangle',
-        order: 3,
+        order: 4,
         stack: 'Stack 1'
       }]
     },
@@ -545,7 +571,7 @@ document.getElementById("defaultOpen").click();
 		    y: {
 		      stacked: true,
           position: 'right',
-          title: { display: true, text: 'Watts' },
+          title: { display: true, text: 'Power (W)' },
 		    }
       },
 	    plugins: {
@@ -627,7 +653,7 @@ document.getElementById("defaultOpen").click();
 		    y: {
 		      stacked: true,
           position: 'right',
-          title: { display: true, text: 'Kilowatt Hours' },
+          title: { display: true, text: 'Power (kWh)' },
 		    }
       },
 	    plugins: {
@@ -644,8 +670,51 @@ document.getElementById("defaultOpen").click();
     }	
   };
 
-  const solarWebYearlyEnhancedHistoricalCanvas = document.getElementById('solarWebYearlyEnhancedHistoricalChart');
-  var solarWebYearlyEnhancedHistoricalChart = new Chart(solarWebYearlyEnhancedHistoricalCanvas, solarWebYearlyEnhancedHistoricalConfig);
+
+  const solarWebYearlyCostHistoricalConfig = {
+    type: 'bar',
+    data: {
+      datasets: [{
+        label: 'Cost',
+        fill: true,
+        borderColor: '#FAD967',
+		    backgroundColor: '#FAD967',
+		    pointRadius: 0,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+        mode: 'index',
+      },	
+      scales: {
+        x: {
+        },
+		    y: {
+		      stacked: true,
+          position: 'right',
+          title: { display: true, text: 'Cost ($)' },
+		    }
+      },
+	    plugins: {
+        legend: {
+          labels: {
+            usePointStyle: true
+          }
+        },
+        tooltip: { 
+            caretSize: 0,
+            position: 'custom'
+        }
+      }
+    }	
+  };
+
+
+
 
 
 
