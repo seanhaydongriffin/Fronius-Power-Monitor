@@ -3,6 +3,7 @@ var stdoutMap = new Map();
 
 var currentPowerJsonObj;
 var pastPowerJsonObj;
+var viewsLostFocus = false;
 
 Neutralino.events.on('spawnedProcess', (evt) => {
 
@@ -29,6 +30,15 @@ Neutralino.events.on('spawnedProcess', (evt) => {
                     handleCurrentPowerReply();
                 } else
                 {
+                    document.getElementById('status').textContent = '';
+                    document.getElementById('views').disabled = false;
+
+                    if (viewsLostFocus)
+                    {
+                        document.getElementById('views').focus();
+                        viewsLostFocus = false;
+                    }
+
                     document.querySelectorAll('td[data-name="cl1qty"]')[0].textContent = "0 kWh";
                     document.querySelectorAll('td[data-name="ssqty"]')[0].textContent = "0 kWh";
                     document.querySelectorAll('td[data-name="pqty"]')[0].textContent = "0 kWh";
@@ -38,9 +48,9 @@ Neutralino.events.on('spawnedProcess', (evt) => {
 
                     if (Array.isArray(loadedJsonObj) && loadedJsonObj[0].hasOwnProperty("con_direct"))
                     { 
-                        console.log("handleSolarWebYearlyPastPowerReply");
+                        console.log("handleDailySolarWebPastPowerReply");
                         pastPowerJsonObj = loadedJsonObj;
-                        handleSolarWebYearlyPastPowerReply();
+                        handleDailySolarWebPastPowerReply();
                     } else
                         if (loadedJsonObj.hasOwnProperty("isPremiumFeature"))
                         {
@@ -54,8 +64,12 @@ Neutralino.events.on('spawnedProcess', (evt) => {
                         }
                 }
             } catch (error) {
+                console.log("failed to load JSON");
+                document.getElementById('status').textContent = 'No data found, try another date or view.';
                 loadedJsonObj = null;
-                // solarWebEnhancedHistoricalChart.update('none');
+                pastPowerChart.destroy();
+
+                // pastPowerChart.update('none');
                 // document.querySelectorAll('td[data-name="cl1qty"]')[0].textContent = "0 kWh";
                 // document.querySelectorAll('td[data-name="ssqty"]')[0].textContent = "0 kWh";
                 // document.querySelectorAll('td[data-name="pqty"]')[0].textContent = "0 kWh";
@@ -66,7 +80,7 @@ Neutralino.events.on('spawnedProcess', (evt) => {
             }
             stdoutMap.delete(evt.detail.id);
             //alert(JSON.stringify(loadedJsonObj));
-            document.getElementById('loading').textContent = '';
+            document.getElementById('views').disabled = false;
 
             break;
     }
@@ -99,7 +113,7 @@ function handleCurrentPowerReply()
 
 function tryUntilNoException(conditionFunc) {
     try {
-        conditionFunc();
+        return conditionFunc();
     } catch (err) {
         console.log('setTimeout');
         setTimeout(() => tryUntilNoException(conditionFunc), 100);
@@ -226,12 +240,12 @@ function adjustPowerForPeriod(powerJsonObj, startHour1, endHour1, startHour2, en
 
 function handleInverterPastPowerReply()
 {
-    solarWebEnhancedHistoricalChart.destroy();
-    solarWebEnhancedHistoricalChart = new Chart(solarWebEnhancedHistoricalCanvas, inverterHistoricalConfig);
-    solarWebEnhancedHistoricalChart.options.animation = false;
+    pastPowerChart.destroy();
+    pastPowerChart = new Chart(solarWebEnhancedHistoricalCanvas, inverterHistoricalConfig);
+    pastPowerChart.options.animation = false;
     const now = new Date(document.getElementById('historicalChartDate').value)
     const todayLong = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-    solarWebEnhancedHistoricalChart.options.plugins.title = { display: true, text: `Power in 5 minute intervals as at ${todayLong}` };
+    pastPowerChart.options.plugins.title = { display: true, text: `Power in 5 minute intervals as at ${todayLong}` };
 
     var localTimestamp = pastPowerJsonObj.map(item => item.local_timestamp.substring(11, 11+5));
     const consumptionIncrementalWatts = pastPowerJsonObj.map(item => item.consumption_incremental_watts == 0 ? null : item.consumption_incremental_watts);
@@ -242,41 +256,97 @@ function handleInverterPastPowerReply()
     localTimestamp = fillTimesArray(localTimestamp);
 
     //console.log(JSON.stringify(localTimestamp));
-    solarWebEnhancedHistoricalChart.data.labels = localTimestamp;
-    solarWebEnhancedHistoricalChart.data.datasets[0].data = consumptionIncrementalWatts;            // the solar web blue line (consumption) 
-    solarWebEnhancedHistoricalChart.data.datasets[1].data = gridProductionIncrementalWatts;         // the solar web gray area (Power to grid)
-    solarWebEnhancedHistoricalChart.data.datasets[2].data = internalConsumptionIncrementalWatts;    // the solar web yellow area (consumed directly)
-    solarWebEnhancedHistoricalChart.update('none');
+    pastPowerChart.data.labels = localTimestamp;
+    pastPowerChart.data.datasets[0].data = consumptionIncrementalWatts;            // the solar web blue line (consumption) 
+    pastPowerChart.data.datasets[1].data = gridProductionIncrementalWatts;         // the solar web gray area (Power to grid)
+    pastPowerChart.data.datasets[2].data = internalConsumptionIncrementalWatts;    // the solar web yellow area (consumed directly)
+    pastPowerChart.update('none');
     
 }
 
-function handleSolarWebYearlyPastPowerReply()
+function handleDailySolarWebPastPowerReply()
 {
-    solarWebEnhancedHistoricalChart.destroy();
+    pastPowerChart.destroy();
 
     if (document.getElementById('views').value == 'powerDailyView')
     
-        solarWebEnhancedHistoricalChart = new Chart(solarWebEnhancedHistoricalCanvas, solarWebYearlyEnhancedHistoricalConfig);
+        pastPowerChart = new Chart(solarWebEnhancedHistoricalCanvas, solarWebYearlyEnhancedHistoricalConfig);
 
     if (document.getElementById('views').value == 'costDailyView')
 
-        solarWebEnhancedHistoricalChart = new Chart(solarWebEnhancedHistoricalCanvas, solarWebYearlyCostHistoricalConfig);
+        pastPowerChart = new Chart(solarWebEnhancedHistoricalCanvas, solarWebYearlyCostHistoricalConfig);
 
-    solarWebEnhancedHistoricalChart.options.animation = false;
+    pastPowerChart.options.animation = false;
+
+    var totalCharge = 0;
 
     const dateArray = pastPowerJsonObj.map(item => item.date);
-    solarWebEnhancedHistoricalChart.data.labels = dateArray;
+    pastPowerChart.data.labels = dateArray;
+
+    const cl1Array = pastPowerJsonObj.map(item => item.cl1);
+    let cl1Sum = cl1Array.reduce((accumulator, currentValue) => { return accumulator + currentValue; }, 0);
+    document.querySelectorAll('td[data-name="cl1qty"]')[0].textContent = cl1Sum.toFixed(4) + " kWh";
+    document.querySelectorAll('td[data-name="cl1total"]')[0].textContent = '$' + (cl1Sum * document.getElementsByName('cfgcl1rate')[0].value).toFixed(2);
+    totalCharge += cl1Sum * document.getElementsByName('cfgcl1rate')[0].value;
+
+    document.querySelectorAll('td[data-name="dcqty"]')[0].textContent = dateArray.length + " days";
+    document.querySelectorAll('td[data-name="dctotal"]')[0].textContent = '$' + (dateArray.length * document.getElementsByName('cfgdcrate')[0].value).toFixed(2);
+    totalCharge += dateArray.length * document.getElementsByName('cfgdcrate')[0].value;
+
+    document.querySelectorAll('td[data-name="dccl1qty"]')[0].textContent = dateArray.length + " days";
+    document.querySelectorAll('td[data-name="dccl1total"]')[0].textContent = '$' + (dateArray.length * document.getElementsByName('cfgdccl1rate')[0].value).toFixed(2);
+    totalCharge += dateArray.length * document.getElementsByName('cfgdccl1rate')[0].value
+
+    const solarArray = pastPowerJsonObj.map(item => item.solar);
+    let solarSum = solarArray.reduce((accumulator, currentValue) => { return accumulator + currentValue; }, 0);
+    
+    if (document.getElementById('withSolar').checked)
+    {
+        document.querySelectorAll('td[data-name="ssqty"]')[0].textContent = solarSum.toFixed(4) + " kWh";
+        document.querySelectorAll('td[data-name="sstotal"]')[0].textContent = '$' + Number(Math.abs(solarSum * document.getElementsByName('cfgssrate')[0].value)).toFixed(2);
+        totalCharge += solarSum * document.getElementsByName('cfgssrate')[0].value;
+
+        if (solarSum * document.getElementsByName('cfgssrate')[0].value < 0)
+
+            document.querySelectorAll('td[data-name="sscr"]')[0].textContent = "cr";
+        else
+        
+            document.querySelectorAll('td[data-name="sscr"]')[0].textContent = "";
+    }
+
+    if (document.getElementById('withoutSolar').checked)
+    {
+        document.querySelectorAll('td[data-name="ssqty"]')[0].textContent = "0 kWh";
+        document.querySelectorAll('td[data-name="sstotal"]')[0].textContent = '$0.00';
+        document.querySelectorAll('td[data-name="sscr"]')[0].textContent = "";
+    }
+
+
+    const peakArray = pastPowerJsonObj.map(item => item.peak);
+    let peakSum = peakArray.reduce((accumulator, currentValue) => { return accumulator + currentValue; }, 0);
+    document.querySelectorAll('td[data-name="pqty"]')[0].textContent = peakSum.toFixed(4) + " kWh";
+    document.querySelectorAll('td[data-name="ptotal"]')[0].textContent = '$' + (peakSum * document.getElementsByName('cfgprate')[0].value).toFixed(2);
+    totalCharge += peakSum * document.getElementsByName('cfgprate')[0].value;
+
+    const consumedDirectlyArray = pastPowerJsonObj.map(item => item.con_direct);
+
+    if (document.getElementById('withoutSolar').checked)
+    {
+        let consumedDirectlySum = consumedDirectlyArray.reduce((accumulator, currentValue) => { return accumulator + currentValue; }, 0);
+        //console.log("consumedDirectlySum=" + consumedDirectlySum);
+        document.querySelectorAll('td[data-name="pqty"]')[0].textContent = (peakSum + consumedDirectlySum).toFixed(4) + " kWh";
+        document.querySelectorAll('td[data-name="ptotal"]')[0].textContent = '$' + ((peakSum + consumedDirectlySum) * document.getElementsByName('cfgprate')[0].value).toFixed(2);
+        totalCharge += consumedDirectlySum * document.getElementsByName('cfgprate')[0].value;
+    }
+
+    document.getElementById('total').textContent = '$' + totalCharge.toFixed(2);
 
     if (document.getElementById('views').value == 'powerDailyView')
     {
-        const cl1Array = pastPowerJsonObj.map(item => item.cl1);
-        const peakArray = pastPowerJsonObj.map(item => item.peak);
-        const solarArray = pastPowerJsonObj.map(item => item.solar);
-        const consumedDirectlyArray = pastPowerJsonObj.map(item => item.con_direct);
-        solarWebEnhancedHistoricalChart.data.datasets[0].data = consumedDirectlyArray;
-        solarWebEnhancedHistoricalChart.data.datasets[1].data = peakArray;
-        solarWebEnhancedHistoricalChart.data.datasets[2].data = cl1Array;
-        solarWebEnhancedHistoricalChart.data.datasets[3].data = solarArray;
+        pastPowerChart.data.datasets[0].data = consumedDirectlyArray;
+        pastPowerChart.data.datasets[1].data = peakArray;
+        pastPowerChart.data.datasets[2].data = cl1Array;
+        pastPowerChart.data.datasets[3].data = solarArray;
     }
 
     if (document.getElementById('views').value == 'costDailyView')
@@ -286,24 +356,25 @@ function handleSolarWebYearlyPastPowerReply()
         const dccl1Rate = document.getElementsByName('cfgdccl1rate')[0].value;
         const ssRate = document.getElementsByName('cfgssrate')[0].value;
         const pRate = document.getElementsByName('cfgprate')[0].value;
-        const costWithSolarArray = pastPowerJsonObj.map(item => (item.cl1 * cl1Rate) + (1 * dcRate) + (1 * dccl1Rate) + (item.solar * ssRate) + (item.peak * pRate));
-        const costWithoutSolarArray = pastPowerJsonObj.map(item => (item.cl1 * cl1Rate) + (1 * dcRate) + (1 * dccl1Rate) + ((item.peak + item.con_direct) * pRate));
+        const costWithSolarArray = pastPowerJsonObj.map(item => ((item.cl1 * cl1Rate) + (1 * dcRate) + (1 * dccl1Rate) + (item.solar * ssRate) + (item.peak * pRate)).toFixed(2));
+        //console.log("costWithSolarArray=" + costWithSolarArray);
+        const costWithoutSolarArray = pastPowerJsonObj.map(item => ((item.cl1 * cl1Rate) + (1 * dcRate) + (1 * dccl1Rate) + ((item.peak + item.con_direct) * pRate)).toFixed(2));
         const maxCost = Math.ceil(Math.max(...costWithSolarArray, ...costWithoutSolarArray));
 
-        solarWebEnhancedHistoricalChart.options.scales.y.max = maxCost;
+        pastPowerChart.options.scales.y.max = maxCost;
 
         if (document.getElementById('withSolar').checked)
 
-            solarWebEnhancedHistoricalChart.data.datasets[0].data = costWithSolarArray;
+            pastPowerChart.data.datasets[0].data = costWithSolarArray;
 
         if (document.getElementById('withoutSolar').checked)
 
-            solarWebEnhancedHistoricalChart.data.datasets[0].data = costWithoutSolarArray;
+            pastPowerChart.data.datasets[0].data = costWithoutSolarArray;
 
-        //solarWebEnhancedHistoricalChart.data.datasets[0].data = costArray;
+        //pastPowerChart.data.datasets[0].data = costArray;
     }
 
-    solarWebEnhancedHistoricalChart.update('none');
+    pastPowerChart.update('none');
 
 }
 
@@ -311,25 +382,27 @@ function handleSolarWebYearlyPastPowerReply()
 
 function handleSolarWebPastPowerReply()
 {
+    console.log("pastPowerJsonObj=" + JSON.stringify(pastPowerJsonObj));
 
-    solarWebEnhancedHistoricalChart.destroy();
+    pastPowerChart.destroy();
 
     if (document.getElementById('views').value == 'powerIntradayV1View')
 
-        solarWebEnhancedHistoricalChart = new Chart(solarWebEnhancedHistoricalCanvas, solarWebOriginalHistoricalConfig);
+        pastPowerChart = new Chart(solarWebEnhancedHistoricalCanvas, solarWebOriginalHistoricalConfig);
     
     if (document.getElementById('views').value == 'powerIntradayV2View')
 
-        solarWebEnhancedHistoricalChart = new Chart(solarWebEnhancedHistoricalCanvas, solarWebEnhancedHistoricalConfig);
+        pastPowerChart = new Chart(solarWebEnhancedHistoricalCanvas, solarWebEnhancedHistoricalConfig);
 
-    solarWebEnhancedHistoricalChart.options.animation = false;
+    pastPowerChart.options.animation = false;
     const now = new Date(document.getElementById('historicalChartDate').value)
     const todayLong = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-    solarWebEnhancedHistoricalChart.options.plugins.title = { display: true, text: `Power in 5 minute intervals as at ${todayLong}` };
+    pastPowerChart.options.plugins.title = { display: true, text: `Power in 5 minute intervals as at ${todayLong}` };
 
     const powerToGridSeries = pastPowerJsonObj.settings.series.find(item => item.name === "Power to grid");
     const consumptionSeries = pastPowerJsonObj.settings.series.find(item => item.name === "Consumption");
     const consumedDirectlySeries = pastPowerJsonObj.settings.series.find(item => item.name === "Consumed directly");
+    var totalCharge = 0;
 
     if (consumptionSeries)
     {
@@ -339,7 +412,7 @@ function handleSolarWebPastPowerReply()
 
         if (document.getElementById('views').value == 'powerIntradayV1View')
 
-            solarWebEnhancedHistoricalChart.data.datasets[0].data = consumptionPower;
+            pastPowerChart.data.datasets[0].data = consumptionPower;
 
         console.log("consumptionPower=" + consumptionPower);
         //console.log("consumptionTime=" + JSON.stringify(consumptionTime));
@@ -367,11 +440,11 @@ function handleSolarWebPastPowerReply()
 
         if (document.getElementById('views').value == 'powerIntradayV1View')
 
-            solarWebEnhancedHistoricalChart.data.labels = consumptionTimeHoursMinutes;
+            pastPowerChart.data.labels = consumptionTimeHoursMinutes;
 
         if (document.getElementById('views').value == 'powerIntradayV2View')
 
-            solarWebEnhancedHistoricalChart.data.labels = consumptionTimeHoursMinutes;
+            pastPowerChart.data.labels = consumptionTimeHoursMinutes;
 
 
 
@@ -419,14 +492,14 @@ function handleSolarWebPastPowerReply()
 
         if (document.getElementById('views').value == 'powerIntradayV2View')
 
-            solarWebEnhancedHistoricalChart.data.datasets[1].data = peakConsumedFromGridPower;
+            pastPowerChart.data.datasets[1].data = peakConsumedFromGridPower;
 
         const cl1ConsumedFromGridPower = result.tenPercentValuesArray.map(subArray => subArray.result == 0 ? null : subArray.result);
         console.log("cl1ConsumedFromGridPower=" + cl1ConsumedFromGridPower);
 
         if (document.getElementById('views').value == 'powerIntradayV2View')
 
-            solarWebEnhancedHistoricalChart.data.datasets[2].data = cl1ConsumedFromGridPower;
+            pastPowerChart.data.datasets[2].data = cl1ConsumedFromGridPower;
     
 
 
@@ -467,8 +540,10 @@ function handleSolarWebPastPowerReply()
         
         const cl1Rate = document.getElementsByName('cfgcl1rate')[0].value;
         document.querySelectorAll('td[data-name="cl1total"]')[0].textContent = '$' + (controlledLoad1TotalKilowattHoursEstimated * cl1Rate).toFixed(2);
+        totalCharge += controlledLoad1TotalKilowattHoursEstimated * cl1Rate;
         const pRate = document.getElementsByName('cfgprate')[0].value;
         document.querySelectorAll('td[data-name="ptotal"]')[0].textContent = '$' + (peakTotalKilowattHoursEstimated * pRate).toFixed(2);
+        totalCharge += peakTotalKilowattHoursEstimated * pRate;
 
         const cl1MeterName = document.getElementsByName('cfgcl1meter')[0].value;
         //console.log("cl1MeterName=" + cl1MeterName);
@@ -493,11 +568,11 @@ function handleSolarWebPastPowerReply()
 
         if (document.getElementById('views').value == 'powerIntradayV1View')
 
-            solarWebEnhancedHistoricalChart.data.datasets[1].data = consumedDirectlyPower;
+            pastPowerChart.data.datasets[1].data = consumedDirectlyPower;
 
         if (document.getElementById('views').value == 'powerIntradayV2View')
 
-            solarWebEnhancedHistoricalChart.data.datasets[0].data = consumedDirectlyPower;
+            pastPowerChart.data.datasets[0].data = consumedDirectlyPower;
 
         console.log("consumedDirectlyPower=" + consumedDirectlyPower);
     }
@@ -509,11 +584,11 @@ function handleSolarWebPastPowerReply()
 
         if (document.getElementById('views').value == 'powerIntradayV1View')
 
-            solarWebEnhancedHistoricalChart.data.datasets[2].data = powerToGridPower;
+            pastPowerChart.data.datasets[2].data = powerToGridPower;
 
         if (document.getElementById('views').value == 'powerIntradayV2View')
         
-            solarWebEnhancedHistoricalChart.data.datasets[3].data = powerToGridPower;
+            pastPowerChart.data.datasets[3].data = powerToGridPower;
 
         console.log("powerToGridPower=" + powerToGridPower);
 
@@ -535,6 +610,7 @@ function handleSolarWebPastPowerReply()
         
         const ssRate = document.getElementsByName('cfgssrate')[0].value;
         document.querySelectorAll('td[data-name="sstotal"]')[0].textContent = '$' + Number(Math.abs(powerToGridPowerTotalKilowattHours * ssRate)).toFixed(2);
+        totalCharge += powerToGridPowerTotalKilowattHours * ssRate;
 
         if (Number(powerToGridPowerTotalKilowattHours * ssRate) < 0)
 
@@ -554,12 +630,16 @@ function handleSolarWebPastPowerReply()
     document.querySelectorAll('td[data-name="dcqty"]')[0].textContent = "1 day";
     const dcRate = document.getElementsByName('cfgdcrate')[0].value;
     document.querySelectorAll('td[data-name="dctotal"]')[0].textContent = '$' + (1 * dcRate).toFixed(2);
+    totalCharge += 1 * dcRate;
 
     document.querySelectorAll('td[data-name="dccl1qty"]')[0].textContent = "1 day";
     const dccl1Rate = document.getElementsByName('cfgdccl1rate')[0].value;
     document.querySelectorAll('td[data-name="dccl1total"]')[0].textContent = '$' + (1 * dccl1Rate).toFixed(2);
+    totalCharge += 1 * dccl1Rate;
 
-    solarWebEnhancedHistoricalChart.update('none');
+    document.getElementById('total').textContent = '$' + totalCharge.toFixed(2);
+
+    pastPowerChart.update('none');
 
 
 }
@@ -594,26 +674,32 @@ let getCurrentPower = async () => {
 
 let getPastPower = async () => {
 
-    document.getElementById('loading').textContent = 'loading...';
+    document.getElementById('status').textContent = 'loading...';
     document.getElementById("withSolar").checked = true;
     const today = document.getElementById('historicalChartDate').value;
     console.log("today=" + today);
 
-    if (solarWebEnhancedHistoricalChart.data.datasets.length >= 1)
+    var numberOfDatasets = 0;
 
-        solarWebEnhancedHistoricalChart.data.datasets[0].data = [];
+    tryUntilNoException(() => { 
+        numberOfDatasets = pastPowerChart.data.datasets.length; 
+    });
 
-    if (solarWebEnhancedHistoricalChart.data.datasets.length >= 2)
+    if (numberOfDatasets >= 1)
 
-        solarWebEnhancedHistoricalChart.data.datasets[1].data = [];
+        pastPowerChart.data.datasets[0].data = [];
 
-    if (solarWebEnhancedHistoricalChart.data.datasets.length >= 3)
+    if (numberOfDatasets >= 2)
 
-        solarWebEnhancedHistoricalChart.data.datasets[2].data = [];
+        pastPowerChart.data.datasets[1].data = [];
 
-    if (solarWebEnhancedHistoricalChart.data.datasets.length >= 4)
+    if (numberOfDatasets >= 3)
 
-        solarWebEnhancedHistoricalChart.data.datasets[3].data = [];
+        pastPowerChart.data.datasets[2].data = [];
+
+    if (numberOfDatasets >= 4)
+
+        pastPowerChart.data.datasets[3].data = [];
 
     if (document.getElementById('views').value == 'powerIntradayView')
     {
@@ -638,7 +724,13 @@ let getPastPower = async () => {
 
 }
 
-let changeChart = async () => {
+let changeView = async () => {
+
+    if (document.activeElement === document.getElementById('views'))
+    
+        viewsLostFocus = true;
+
+    document.getElementById('views').disabled = true;
 
     const selectedChart = document.getElementById('views').value;
     console.log("selectedChart=" + selectedChart);
@@ -655,6 +747,14 @@ let changeChart = async () => {
         document.getElementById('historicalChartDate').style.display = 'none';
     }
     
+    if (selectedChart == 'costDailyView')
+    {
+        document.getElementById('chooseAChart').style.display = 'inline';
+    } else
+    {
+        document.getElementById('chooseAChart').style.display = 'none';
+    }
+
     getPastPower();
 }
 
@@ -688,80 +788,18 @@ Neutralino.events.on('ready', async () => {
         settingsJsonObj.gauges.height = this.value; saveSettings();
     });
 
-    // (async() => {
-    //     console.log("waiting for variable");
-    //     while(false) // define the condition as you like
-    //         await new Promise(resolve => setTimeout(resolve, 1000));
-    //     console.log("variable is defined");
-    // })();
-
-    // wait for the charts to be ready
-
-    // waitForTrue(() => {
-    //     // Your condition logic here
-    //     try
-    //     {
-    //         fromSolarGauge.data.datasets[0].data[0] = 0;
-    //     } catch (err)
-    //     {
-    //         console.log("waitForTrue is false");
-    //         return false; // or false based on some logic
-    //     }
-    //     console.log("waitForTrue is true");
-    //     return true;
-    // });
-
-    // (async() => {
-    //     console.log("waiting for variable");
-    //     while(!window.hasOwnProperty("fromSolarGauge.data.datasets[0].data[0]")) // define the condition as you like
-    //         await new Promise(resolve => setTimeout(resolve, 1000));
-    //     console.log("variable is defined");
-    // })();
-
-    // const observer = new MutationObserver((mutations, obs) => {
-    //     if (fromSolarGauge.data.datasets) {
-    //     // Element is now in the DOM
-    //     // Perform operations with 'element'
-    //     obs.disconnect(); // Stop observing once the element is found
-    //     }
-    //     });
-        
-    //     observer.observe(document.body, {
-    //     childList: true, // Observe direct children
-    //     subtree: true, // and lower descendants too
-    //     });
-
     initElement(document.getElementById('pfs1limit'), NL_gaugesDef.powerFromSolar.band[0].limit, settingsJsonObj.gauges.powerFromSolar.band[0].limit, "input", function() {
         settingsJsonObj.gauges.powerFromSolar.band[0].limit = this.value; 
 
-        //fromSolarGauge.data.datasets[0].data[0] = settingsJsonObj.gauges.powerFromSolar.band[0].limit;
-
-        tryUntilNoException(() => { fromSolarGauge.data.datasets[0].data[0] = settingsJsonObj.gauges.powerFromSolar.band[0].limit; });
-
-
-        // waitForTrue(() => {
-        //     // Your condition logic here
-        //     try
-        //     {
-        //         fromSolarGauge.data.datasets[0].data[0] = settingsJsonObj.gauges.powerFromSolar.band[0].limit;
-        //     } catch (err)
-        //     {
-        //         console.log("waitForTrue is false");
-        //         return false; // or false based on some logic
-        //     }
-        //     console.log("waitForTrue is true");
-        //     return true;
-        // });
-
-
-
-
+        tryUntilNoException(() => { 
+            fromSolarGauge.data.datasets[0].data[0] = settingsJsonObj.gauges.powerFromSolar.band[0].limit; 
+        });
         saveSettings();
     });
 
     initElement(document.getElementById('pfs2limit'), NL_gaugesDef.powerFromSolar.band[1].limit, settingsJsonObj.gauges.powerFromSolar.band[1].limit, "input", function() {
         settingsJsonObj.gauges.powerFromSolar.band[1].limit = this.value; 
-        //fromSolarGauge.data.datasets[0].data[1] = settingsJsonObj.gauges.powerFromSolar.band[1].limit;
+        
         tryUntilNoException(() => { 
             fromSolarGauge.data.datasets[0].data[1] = settingsJsonObj.gauges.powerFromSolar.band[1].limit; 
         });
@@ -770,7 +808,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfs3limit'), NL_gaugesDef.powerFromSolar.band[2].limit, settingsJsonObj.gauges.powerFromSolar.band[2].limit, "input", function() {
         settingsJsonObj.gauges.powerFromSolar.band[2].limit = this.value; 
-        //fromSolarGauge.data.datasets[0].data[2] = settingsJsonObj.gauges.powerFromSolar.band[2].limit;
+        
         tryUntilNoException(() => { 
             fromSolarGauge.data.datasets[0].data[2] = settingsJsonObj.gauges.powerFromSolar.band[2].limit;
         });
@@ -779,7 +817,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfs4limit'), NL_gaugesDef.powerFromSolar.band[3].limit, settingsJsonObj.gauges.powerFromSolar.band[3].limit, "input", function() {
         settingsJsonObj.gauges.powerFromSolar.band[3].limit = this.value; 
-        //fromSolarGauge.data.datasets[0].data[3] = settingsJsonObj.gauges.powerFromSolar.band[3].limit;
+        
         tryUntilNoException(() => { 
             fromSolarGauge.data.datasets[0].data[3] = settingsJsonObj.gauges.powerFromSolar.band[3].limit;
         });
@@ -788,7 +826,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfs1colour'), NL_gaugesDef.powerFromSolar.band[0].colour, settingsJsonObj.gauges.powerFromSolar.band[0].colour, "input", function() {
         settingsJsonObj.gauges.powerFromSolar.band[0].colour = this.value; 
-        //fromSolarGauge.data.datasets[0].backgroundColor[0] = settingsJsonObj.gauges.powerFromSolar.band[0].colour;
+        
         tryUntilNoException(() => { 
             fromSolarGauge.data.datasets[0].backgroundColor[0] = settingsJsonObj.gauges.powerFromSolar.band[0].colour;
         });
@@ -797,7 +835,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfs2colour'), NL_gaugesDef.powerFromSolar.band[1].colour, settingsJsonObj.gauges.powerFromSolar.band[1].colour, "input", function() {
         settingsJsonObj.gauges.powerFromSolar.band[1].colour = this.value; 
-        //fromSolarGauge.data.datasets[0].backgroundColor[1] = settingsJsonObj.gauges.powerFromSolar.band[1].colour;
+        
         tryUntilNoException(() => { 
             fromSolarGauge.data.datasets[0].backgroundColor[1] = settingsJsonObj.gauges.powerFromSolar.band[1].colour;
         });
@@ -806,7 +844,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfs3colour'), NL_gaugesDef.powerFromSolar.band[2].colour, settingsJsonObj.gauges.powerFromSolar.band[2].colour, "input", function() {
         settingsJsonObj.gauges.powerFromSolar.band[2].colour = this.value; 
-        //fromSolarGauge.data.datasets[0].backgroundColor[2] = settingsJsonObj.gauges.powerFromSolar.band[2].colour;
+        
         tryUntilNoException(() => { 
             fromSolarGauge.data.datasets[0].backgroundColor[2] = settingsJsonObj.gauges.powerFromSolar.band[2].colour;
         });
@@ -815,7 +853,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfs4colour'), NL_gaugesDef.powerFromSolar.band[3].colour, settingsJsonObj.gauges.powerFromSolar.band[3].colour, "input", function() {
         settingsJsonObj.gauges.powerFromSolar.band[3].colour = this.value; 
-        //fromSolarGauge.data.datasets[0].backgroundColor[3] = settingsJsonObj.gauges.powerFromSolar.band[3].colour;
+        
         tryUntilNoException(() => { 
             fromSolarGauge.data.datasets[0].backgroundColor[3] = settingsJsonObj.gauges.powerFromSolar.band[3].colour;
         });
@@ -824,7 +862,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfg1limit'), NL_gaugesDef.powerFromGrid.band[0].limit, settingsJsonObj.gauges.powerFromGrid.band[0].limit, "input", function() {
         settingsJsonObj.gauges.powerFromGrid.band[0].limit = this.value; 
-        //fromGridGauge.data.datasets[0].data[0] = settingsJsonObj.gauges.powerFromGrid.band[0].limit;
+        
         tryUntilNoException(() => { 
             fromGridGauge.data.datasets[0].data[0] = settingsJsonObj.gauges.powerFromGrid.band[0].limit;
         });
@@ -833,7 +871,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfg2limit'), NL_gaugesDef.powerFromGrid.band[1].limit, settingsJsonObj.gauges.powerFromGrid.band[1].limit, "input", function() {
         settingsJsonObj.gauges.powerFromGrid.band[1].limit = this.value; 
-        //fromGridGauge.data.datasets[0].data[1] = settingsJsonObj.gauges.powerFromGrid.band[1].limit;
+        
         tryUntilNoException(() => { 
             fromGridGauge.data.datasets[0].data[1] = settingsJsonObj.gauges.powerFromGrid.band[1].limit;
         });
@@ -842,7 +880,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfg3limit'), NL_gaugesDef.powerFromGrid.band[2].limit, settingsJsonObj.gauges.powerFromGrid.band[2].limit, "input", function() {
         settingsJsonObj.gauges.powerFromGrid.band[2].limit = this.value; 
-        //fromGridGauge.data.datasets[0].data[2] = settingsJsonObj.gauges.powerFromGrid.band[2].limit;
+        
         tryUntilNoException(() => { 
             fromGridGauge.data.datasets[0].data[2] = settingsJsonObj.gauges.powerFromGrid.band[2].limit;
         });
@@ -851,7 +889,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfg4limit'), NL_gaugesDef.powerFromGrid.band[3].limit, settingsJsonObj.gauges.powerFromGrid.band[3].limit, "input", function() {
         settingsJsonObj.gauges.powerFromGrid.band[3].limit = this.value; 
-        //fromGridGauge.data.datasets[0].data[3] = settingsJsonObj.gauges.powerFromGrid.band[3].limit;
+        
         tryUntilNoException(() => { 
             fromGridGauge.data.datasets[0].data[3] = settingsJsonObj.gauges.powerFromGrid.band[3].limit;
         });
@@ -860,7 +898,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfg1colour'), NL_gaugesDef.powerFromGrid.band[0].colour, settingsJsonObj.gauges.powerFromGrid.band[0].colour, "input", function() {
         settingsJsonObj.gauges.powerFromGrid.band[0].colour = this.value; 
-        //fromGridGauge.data.datasets[0].backgroundColor[0] = settingsJsonObj.gauges.powerFromGrid.band[0].colour;
+        
         tryUntilNoException(() => { 
             fromGridGauge.data.datasets[0].backgroundColor[0] = settingsJsonObj.gauges.powerFromGrid.band[0].colour;
         });
@@ -869,7 +907,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfg2colour'), NL_gaugesDef.powerFromGrid.band[1].colour, settingsJsonObj.gauges.powerFromGrid.band[1].colour, "input", function() {
         settingsJsonObj.gauges.powerFromGrid.band[1].colour = this.value; 
-        //fromGridGauge.data.datasets[0].backgroundColor[1] = settingsJsonObj.gauges.powerFromGrid.band[1].colour;
+        
         tryUntilNoException(() => { 
             fromGridGauge.data.datasets[0].backgroundColor[1] = settingsJsonObj.gauges.powerFromGrid.band[1].colour;
         });
@@ -878,7 +916,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfg3colour'), NL_gaugesDef.powerFromGrid.band[2].colour, settingsJsonObj.gauges.powerFromGrid.band[2].colour, "input", function() {
         settingsJsonObj.gauges.powerFromGrid.band[2].colour = this.value; 
-        //fromGridGauge.data.datasets[0].backgroundColor[2] = settingsJsonObj.gauges.powerFromGrid.band[2].colour;
+        
         tryUntilNoException(() => { 
             fromGridGauge.data.datasets[0].backgroundColor[2] = settingsJsonObj.gauges.powerFromGrid.band[2].colour;
         });
@@ -887,7 +925,7 @@ Neutralino.events.on('ready', async () => {
 
     initElement(document.getElementById('pfg4colour'), NL_gaugesDef.powerFromGrid.band[3].colour, settingsJsonObj.gauges.powerFromGrid.band[3].colour, "input", function() {
         settingsJsonObj.gauges.powerFromGrid.band[3].colour = this.value; 
-        //fromGridGauge.data.datasets[0].backgroundColor[3] = settingsJsonObj.gauges.powerFromGrid.band[3].colour;
+        
         tryUntilNoException(() => { 
             fromGridGauge.data.datasets[0].backgroundColor[3] = settingsJsonObj.gauges.powerFromGrid.band[3].colour;
         });
@@ -926,22 +964,24 @@ Neutralino.events.on('ready', async () => {
 
     getPastPower();
 
-    fromSolarGauge.data.datasets[0].backgroundColor[0] = settingsJsonObj.gauges.powerFromSolar.band[0].colour;
-    fromSolarGauge.data.datasets[0].backgroundColor[1] = settingsJsonObj.gauges.powerFromSolar.band[1].colour;
-    fromSolarGauge.data.datasets[0].backgroundColor[2] = settingsJsonObj.gauges.powerFromSolar.band[2].colour;
-    fromSolarGauge.data.datasets[0].backgroundColor[3] = settingsJsonObj.gauges.powerFromSolar.band[3].colour;
-    fromSolarGauge.data.datasets[0].data[0] = settingsJsonObj.gauges.powerFromSolar.band[0].limit;
-    fromSolarGauge.data.datasets[0].data[1] = settingsJsonObj.gauges.powerFromSolar.band[1].limit;
-    fromSolarGauge.data.datasets[0].data[2] = settingsJsonObj.gauges.powerFromSolar.band[2].limit;
-    fromSolarGauge.data.datasets[0].data[3] = settingsJsonObj.gauges.powerFromSolar.band[3].limit;
-    fromGridGauge.data.datasets[0].backgroundColor[0] = settingsJsonObj.gauges.powerFromGrid.band[0].colour;
-    fromGridGauge.data.datasets[0].backgroundColor[1] = settingsJsonObj.gauges.powerFromGrid.band[1].colour;
-    fromGridGauge.data.datasets[0].backgroundColor[2] = settingsJsonObj.gauges.powerFromGrid.band[2].colour;
-    fromGridGauge.data.datasets[0].backgroundColor[3] = settingsJsonObj.gauges.powerFromGrid.band[3].colour;
-    fromGridGauge.data.datasets[0].data[0] = settingsJsonObj.gauges.powerFromGrid.band[0].limit;
-    fromGridGauge.data.datasets[0].data[1] = settingsJsonObj.gauges.powerFromGrid.band[1].limit;
-    fromGridGauge.data.datasets[0].data[2] = settingsJsonObj.gauges.powerFromGrid.band[2].limit;
-    fromGridGauge.data.datasets[0].data[3] = settingsJsonObj.gauges.powerFromGrid.band[3].limit;
+    tryUntilNoException(() => { 
+        fromSolarGauge.data.datasets[0].backgroundColor[0] = settingsJsonObj.gauges.powerFromSolar.band[0].colour;
+        fromSolarGauge.data.datasets[0].backgroundColor[1] = settingsJsonObj.gauges.powerFromSolar.band[1].colour;
+        fromSolarGauge.data.datasets[0].backgroundColor[2] = settingsJsonObj.gauges.powerFromSolar.band[2].colour;
+        fromSolarGauge.data.datasets[0].backgroundColor[3] = settingsJsonObj.gauges.powerFromSolar.band[3].colour;
+        fromSolarGauge.data.datasets[0].data[0] = settingsJsonObj.gauges.powerFromSolar.band[0].limit;
+        fromSolarGauge.data.datasets[0].data[1] = settingsJsonObj.gauges.powerFromSolar.band[1].limit;
+        fromSolarGauge.data.datasets[0].data[2] = settingsJsonObj.gauges.powerFromSolar.band[2].limit;
+        fromSolarGauge.data.datasets[0].data[3] = settingsJsonObj.gauges.powerFromSolar.band[3].limit;
+        fromGridGauge.data.datasets[0].backgroundColor[0] = settingsJsonObj.gauges.powerFromGrid.band[0].colour;
+        fromGridGauge.data.datasets[0].backgroundColor[1] = settingsJsonObj.gauges.powerFromGrid.band[1].colour;
+        fromGridGauge.data.datasets[0].backgroundColor[2] = settingsJsonObj.gauges.powerFromGrid.band[2].colour;
+        fromGridGauge.data.datasets[0].backgroundColor[3] = settingsJsonObj.gauges.powerFromGrid.band[3].colour;
+        fromGridGauge.data.datasets[0].data[0] = settingsJsonObj.gauges.powerFromGrid.band[0].limit;
+        fromGridGauge.data.datasets[0].data[1] = settingsJsonObj.gauges.powerFromGrid.band[1].limit;
+        fromGridGauge.data.datasets[0].data[2] = settingsJsonObj.gauges.powerFromGrid.band[2].limit;
+        fromGridGauge.data.datasets[0].data[3] = settingsJsonObj.gauges.powerFromGrid.band[3].limit;
+    });
 
     document.getElementById('restoreDefault').addEventListener('click', function() {
         defaultElement(document.getElementById('inverterAddress'), NL_inverterIpAddressDef);
@@ -1033,6 +1073,27 @@ Neutralino.events.on('ready', async () => {
         element = document.getElementById('cfgc' + counter + 'meter');
     }
 
+    var newRow = usageTable.insertRow(-1);
+    var newCell = newRow.insertCell(-1);
+    newCell.innerHTML = ' ';
+    var newCell = newRow.insertCell(-1);
+    newCell.style.fontWeight = 'bold';
+    newCell.style.borderTop = '1px solid black';
+    newCell.innerHTML = 'Total';
+    var newCell = newRow.insertCell(-1);
+    newCell.style.borderTop = '1px solid black';
+    newCell.innerHTML = ' ';
+    var newCell = newRow.insertCell(-1);
+    newCell.style.borderTop = '1px solid black';
+    newCell.innerHTML = ' ';
+    var newCell = newRow.insertCell(-1);
+    newCell.id = 'total';
+    newCell.style.fontWeight = 'bold';
+    newCell.style.textAlign = 'right';
+    newCell.style.borderTop = '1px solid black';
+    newCell.innerHTML = ' ';
+    var newCell = newRow.insertCell(-1);
+    newCell.innerHTML = ' ';
 
 
 
