@@ -102,7 +102,7 @@ html, body {
     <div class="config-left">
       <div>
         <label for="views">Choose a view: </label>
-        <select name="views" id="views" style="width: 200px;" onchange="changeChart()">
+        <select name="views" id="views" style="width: 250px;" onchange="changeView()">
           <option value="powerIntradayV2View">Power Intraday v2 (Solar Web data)</option>
           <option value="powerIntradayV1View">Power Intraday v1 (Solar Web data)</option>
           <option value="powerIntradayView">Power Intraday (Inverter data)</option>
@@ -111,22 +111,20 @@ html, body {
         </select>
         <label for="historicalChartDate">Choose a date: </label><input type="date" id="historicalChartDate"/>
       </div>
-      <div>
+      <div id="chooseAChart" style="display: none;">
         <label for="chart">Choose a chart: </label>
-        <input type="radio" id="withSolar" name="chart" value="withSolar" onclick="handleSolarWebYearlyPastPowerReply()"><label for="withSolar">With Solar</label>
-        <input type="radio" id="withoutSolar" name="chart" value="withoutSolar" onclick="handleSolarWebYearlyPastPowerReply()"><label for="withoutSolar">Without Solar</label>
+        <input type="radio" id="withSolar" name="chart" value="withSolar" onclick="handleDailySolarWebPastPowerReply()"><label for="withSolar">With Solar</label>
+        <input type="radio" id="withoutSolar" name="chart" value="withoutSolar" onclick="handleDailySolarWebPastPowerReply()"><label for="withoutSolar">Without Solar</label>
       </div>
 
     </div>
     <div class="config-right">
-      <span id="loading"></span>
+      <span id="status"></span>
       <button onclick="getPastPower()">Refresh</button>
     </div>
   </div>
 
-<!--  <div style="height: 300px; width: 100%;"><canvas id="inverterHistoricalChart"></canvas></div> -->
-<!--  <div style="height: 300px; width: 100%;"><canvas id="solarWebOriginalHistoricalChart"></canvas></div> -->
-  <div style="height: 300px; width: 100%;"><canvas id="solarWebEnhancedHistoricalChart"></canvas></div>
+  <div style="height: 300px; width: 100%;"><canvas id="pastPowerChart"></canvas></div>
   <div>
     <h3>Bill for period xx to yy</h3>
     <table id="meters" style="width: 100%; table-layout: fixed; border: 2px solid red; border-radius: 10px;">
@@ -139,8 +137,6 @@ html, body {
       <thead><tr><th></th><th style="text-align: left; width: 40%;">Charge</th><th style="text-align: right; width: 20%;">Quantity</th><th style="text-align: right; width: 20%;">Rate Incl. GST</th><th style="text-align: right; width: 20%;">Total Incl. GST</th><th></th></tr></thead>
     </table>
   </div>
-  <br>
-  <div style="height: 300px; width: 100%;"><canvas id="solarWebYearlyEnhancedHistoricalChart"></canvas></div>
 </div>
 
 <div id="Events" class="tabcontent">
@@ -215,7 +211,7 @@ function openTab(evt, tabName) {
 
   if (tabName == 'Historical Charts')
   
-    document.getElementById('charts').focus();
+    document.getElementById('views').focus();
 }
 
 document.getElementById("defaultOpen").click();
@@ -595,8 +591,8 @@ document.getElementById("defaultOpen").click();
     }	
   };
 
-  const solarWebEnhancedHistoricalCanvas = document.getElementById('solarWebEnhancedHistoricalChart');
-  var solarWebEnhancedHistoricalChart = new Chart(solarWebEnhancedHistoricalCanvas, solarWebEnhancedHistoricalConfig);
+  const solarWebEnhancedHistoricalCanvas = document.getElementById('pastPowerChart');
+  var pastPowerChart = new Chart(solarWebEnhancedHistoricalCanvas, solarWebEnhancedHistoricalConfig);
 
 
   const solarWebYearlyEnhancedHistoricalConfig = {
